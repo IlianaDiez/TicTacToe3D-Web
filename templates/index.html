@@ -208,11 +208,17 @@ canvas { display: block; }
     border-radius: 20px;
     padding: 32px;
     text-align: center;
-    max-width: 400px;
+    max-width: 420px;
     width: 90%;
 }
 
 .modal h2 { font-size: 24px; margin-bottom: 8px; }
+.modal .tipo-victoria {
+    color: #22c55e;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
 .modal p { color: var(--text-dim); margin-bottom: 20px; }
 .modal-btns { display: flex; gap: 10px; justify-content: center; }
 
@@ -353,6 +359,7 @@ canvas { display: block; }
 <div id="game-modal" class="modal-overlay" style="display:none;">
   <div class="modal">
     <h2 id="modal-title">¡Ganaste!</h2>
+    <div class="tipo-victoria" id="tipo-victoria"></div>
     <p id="modal-msg">Has conectado 4 en línea.</p>
     <div class="modal-btns">
       <button class="modal-btn primary" onclick="pedirReinicio()">Nueva Partida</button>
@@ -364,12 +371,14 @@ canvas { display: block; }
 <script>
 // ===================== CONFIGURACIÓN =====================
 const GRID_SIZE = 4;
-const CELL_SIZE = 1.2;
-const SPACING = 1.6;
-const OFFSET = ((GRID_SIZE - 1) * SPACING) / 2;
+const CELL_SIZE = 1.0;
+const SPACING_XY = 1.6;   // Separación en X e Y
+const SPACING_Z = 2.2;    // Separación en Z (profundidad) - MÁS GRANDE para ver capas
+const OFFSET_XY = ((GRID_SIZE - 1) * SPACING_XY) / 2;
+const OFFSET_Z = ((GRID_SIZE - 1) * SPACING_Z) / 2;
 
-const COLOR_EMPTY = 0x3b5a7c;
-const COLOR_EMPTY_EMISSIVE = 0x1a2d42;
+const COLOR_EMPTY = 0x4a6fa5;
+const COLOR_EMPTY_EMISSIVE = 0x1e3a5f;
 const COLOR_X = 0x3b82f6;
 const COLOR_O = 0xf97316;
 const COLOR_WIN = 0x22c55e;
@@ -395,7 +404,7 @@ let symbols = [];
 let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
 let cameraAngle = { theta: Math.PI / 4, phi: Math.PI / 3 };
-let cameraRadius = 14;
+let cameraRadius = 16;
 
 // ===================== SOCKET.IO EVENTS =====================
 socket.on('connect', () => {
@@ -454,9 +463,11 @@ socket.on('jugada', (datos) => {
         const winCells = datos.ganadora.map(c => [c[0], c[1], c[2]]);
         highlightWin(winCells);
         const gano = (jugador === miJugador);
+        const tipo = datos.tipo_ganador || "Línea ganadora";
         showModal(
             gano ? '¡Ganaste!' : '¡Perdiste!',
-            gano ? 'Has conectado 4 en línea.' : 'Tu rival conectó 4 en línea.'
+            gano ? 'Has conectado 4 en línea.' : 'Tu rival conectó 4 en línea.',
+            tipo
         );
         return;
     }
@@ -506,7 +517,7 @@ function initThree() {
     renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0x64748b, 0.8);
+    const ambientLight = new THREE.AmbientLight(0x64748b, 0.9);
     scene.add(ambientLight);
 
     const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
@@ -522,8 +533,8 @@ function initThree() {
     orangeLight.position.set(8, -5, 8);
     scene.add(orangeLight);
 
-    const fillLight = new THREE.PointLight(0x94a3b8, 0.4, 30);
-    fillLight.position.set(0, 0, 10);
+    const fillLight = new THREE.PointLight(0x94a3b8, 0.5, 30);
+    fillLight.position.set(0, 0, 12);
     scene.add(fillLight);
 
     createGrid();
@@ -559,7 +570,7 @@ function createGrid() {
                     emissive: COLOR_EMPTY_EMISSIVE,
                     emissiveIntensity: 0.4,
                     transparent: true,
-                    opacity: 0.7,
+                    opacity: 0.75,
                     roughness: 0.15,
                     metalness: 0.7,
                     transmission: 0.2,
@@ -570,11 +581,11 @@ function createGrid() {
 
                 const mesh = new THREE.Mesh(geometry, material);
                 mesh.position.set(
-                    x * SPACING - OFFSET,
-                    y * SPACING - OFFSET,
-                    z * SPACING - OFFSET
+                    x * SPACING_XY - OFFSET_XY,
+                    y * SPACING_XY - OFFSET_XY,
+                    z * SPACING_Z - OFFSET_Z
                 );
-                mesh.userData = { x, y, z, occupied: false, originalOpacity: 0.7 };
+                mesh.userData = { x, y, z, occupied: false, originalOpacity: 0.75 };
                 scene.add(mesh);
                 cells.push(mesh);
 
@@ -593,8 +604,8 @@ function createGrid() {
 
 function createAxes() {
     const xGeo = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(-OFFSET - 1, -OFFSET - 1, -OFFSET - 1),
-        new THREE.Vector3(OFFSET + 2, -OFFSET - 1, -OFFSET - 1)
+        new THREE.Vector3(-OFFSET_XY - 1, -OFFSET_XY - 1, -OFFSET_Z - 1),
+        new THREE.Vector3(OFFSET_XY + 2, -OFFSET_XY - 1, -OFFSET_Z - 1)
     ]);
     const xMat = new THREE.LineDashedMaterial({ color: 0xec4899, dashSize: 0.3, gapSize: 0.2 });
     const xLine = new THREE.Line(xGeo, xMat);
@@ -602,8 +613,8 @@ function createAxes() {
     scene.add(xLine);
 
     const yGeo = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(-OFFSET - 1, -OFFSET - 1, -OFFSET - 1),
-        new THREE.Vector3(-OFFSET - 1, OFFSET + 2, -OFFSET - 1)
+        new THREE.Vector3(-OFFSET_XY - 1, -OFFSET_XY - 1, -OFFSET_Z - 1),
+        new THREE.Vector3(-OFFSET_XY - 1, OFFSET_XY + 2, -OFFSET_Z - 1)
     ]);
     const yMat = new THREE.LineDashedMaterial({ color: 0x22c55e, dashSize: 0.3, gapSize: 0.2 });
     const yLine = new THREE.Line(yGeo, yMat);
@@ -611,8 +622,8 @@ function createAxes() {
     scene.add(yLine);
 
     const zGeo = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(-OFFSET - 1, -OFFSET - 1, -OFFSET - 1),
-        new THREE.Vector3(-OFFSET - 1, -OFFSET - 1, OFFSET + 2)
+        new THREE.Vector3(-OFFSET_XY - 1, -OFFSET_XY - 1, -OFFSET_Z - 1),
+        new THREE.Vector3(-OFFSET_XY - 1, -OFFSET_XY - 1, OFFSET_Z + 2)
     ]);
     const zMat = new THREE.LineDashedMaterial({ color: 0x3b82f6, dashSize: 0.3, gapSize: 0.2 });
     const zLine = new THREE.Line(zGeo, zMat);
@@ -620,9 +631,9 @@ function createAxes() {
     scene.add(zLine);
 
     for (let i = 1; i <= 4; i++) {
-        createAxisNumber(i.toString(), i * SPACING - OFFSET, -OFFSET - 1.5, -OFFSET - 1.5, 0xec4899);
-        createAxisNumber(i.toString(), -OFFSET - 1.5, i * SPACING - OFFSET, -OFFSET - 1.5, 0x22c55e);
-        createAxisNumber(i.toString(), -OFFSET - 1.5, -OFFSET - 1.5, i * SPACING - OFFSET, 0x3b82f6);
+        createAxisNumber(i.toString(), i * SPACING_XY - OFFSET_XY, -OFFSET_XY - 1.5, -OFFSET_Z - 1.5, 0xec4899);
+        createAxisNumber(i.toString(), -OFFSET_XY - 1.5, i * SPACING_XY - OFFSET_XY, -OFFSET_Z - 1.5, 0x22c55e);
+        createAxisNumber(i.toString(), -OFFSET_XY - 1.5, -OFFSET_XY - 1.5, i * SPACING_Z - OFFSET_Z, 0x3b82f6);
     }
 }
 
@@ -665,9 +676,9 @@ function createX(x, y, z) {
     group.add(bar2);
 
     group.position.set(
-        x * SPACING - OFFSET,
-        y * SPACING - OFFSET,
-        z * SPACING - OFFSET
+        x * SPACING_XY - OFFSET_XY,
+        y * SPACING_XY - OFFSET_XY,
+        z * SPACING_Z - OFFSET_Z
     );
 
     const glowGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
@@ -701,9 +712,9 @@ function createO(x, y, z) {
     group.add(torus);
 
     group.position.set(
-        x * SPACING - OFFSET,
-        y * SPACING - OFFSET,
-        z * SPACING - OFFSET
+        x * SPACING_XY - OFFSET_XY,
+        y * SPACING_XY - OFFSET_XY,
+        z * SPACING_Z - OFFSET_Z
     );
 
     const glowGeo = new THREE.SphereGeometry(0.5, 16, 16);
@@ -819,8 +830,6 @@ function highlightWin(winCells) {
             cell.material.emissive.setHex(COLOR_WIN_EMISSIVE);
             cell.material.emissiveIntensity = 1.2;
             cell.material.opacity = 0.95;
-
-            // Animación de pulso para las celdas ganadoras
             pulseCell(cell);
         }
     }
@@ -831,19 +840,19 @@ function pulseCell(cell) {
     function pulse() {
         if (growing) {
             cell.material.emissiveIntensity += 0.03;
-            if (cell.material.emissiveIntensity >= 1.5) growing = false;
+            if (cell.material.emissiveIntensity >= 1.8) growing = false;
         } else {
             cell.material.emissiveIntensity -= 0.03;
-            if (cell.material.emissiveIntensity <= 0.8) growing = true;
+            if (cell.material.emissiveIntensity <= 0.9) growing = true;
         }
-        if (!terminado) return;
-        requestAnimationFrame(pulse);
+        if (terminado) requestAnimationFrame(pulse);
     }
     pulse();
 }
 
-function showModal(title, msg) {
+function showModal(title, msg, tipoVictoria) {
     document.getElementById('modal-title').textContent = title;
+    document.getElementById('tipo-victoria').textContent = tipoVictoria;
     document.getElementById('modal-msg').textContent = msg;
     document.getElementById('game-modal').style.display = 'flex';
 }
