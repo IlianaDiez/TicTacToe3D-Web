@@ -468,6 +468,12 @@ socket.on('connect', () => {
     document.getElementById('conn-text').textContent = 'Conectado al servidor';
     document.getElementById('conn-text').style.color = '#22c55e';
     socket.emit('buscar_partida');
+
+    // Enviar ping cada 5 segundos para mantener conexión viva
+    if (window.pingInterval) clearInterval(window.pingInterval);
+    window.pingInterval = setInterval(() => {
+        if (socket.connected) socket.emit('ping_vivo');
+    }, 5000);
 });
 
 socket.on('esperando', () => {
@@ -548,11 +554,8 @@ socket.on('jugada', (datos) => {
 });
 
 socket.on('jugada_invalida', (datos) => {
-    // No cambia el turno, solo muestra error temporal
     const turnoTexto = document.getElementById('turno-texto');
     const turnoSub = document.getElementById('turno-sub');
-    const oldText = turnoTexto.textContent;
-    const oldSub = turnoSub.textContent;
 
     turnoTexto.textContent = 'Jugada inválida';
     turnoTexto.className = 'turno-texto';
@@ -563,6 +566,13 @@ socket.on('jugada_invalida', (datos) => {
         updateTurnoDisplay('juego');
         turnoTexto.style.color = '';
     }, 2000);
+});
+
+socket.on('error', (datos) => {
+    document.getElementById('waiting-screen').style.display = 'flex';
+    document.querySelector('.waiting-screen h2').textContent = 'Sala cerrada';
+    document.querySelector('.waiting-screen p').textContent = datos.motivo + '. Recargando...';
+    setTimeout(() => location.reload(), 3000);
 });
 
 socket.on('reiniciada', () => {
@@ -977,6 +987,10 @@ function closeModal() {
 function pedirReinicio() {
     socket.emit('reiniciar');
 }
+
+window.addEventListener('beforeunload', () => {
+    if (window.pingInterval) clearInterval(window.pingInterval);
+});
 
 function resetGame() {
     board = Array(GRID_SIZE).fill(null).map(() =>
