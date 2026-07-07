@@ -9,6 +9,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 import time
 import random
 import string
+import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tictactoe3d-secreto-v2'
@@ -316,4 +317,5 @@ def al_desconectar():
 
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000, debug=False)
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(app, host='0.0.0.0', port=port, debug=False)
