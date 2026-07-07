@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Tic Tac Toe 3D</title>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f2f2f2;
+        text-align: center;
+        margin: 0;
+        padding: 20px;
+    }
+    #tablero {
+        display: grid;
+        grid-template-columns: repeat(16, 45px);
+        grid-template-rows: repeat(16, 45px);
+        gap: 2px;
+        justify-content: center;
+        margin: 20px auto;
+    }
+    .casilla {
+        width: 45px;
+        height: 45px;
+        border: 1px solid #999;
+        background: white;
+        font-size: 20px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        user-select: none;
+    }
+    .casilla.vacia:hover {
+        background: #e0e0f0;
+    }
+    .casilla.x { color: #2b6fd6; }
+    .casilla.o { color: #d63b3b; }
+    .casilla.ganadora {
+        background: red !important;
+        color: yellow !important;
+    }
+    #estado { font-size: 20px; color: green; margin: 10px; min-height: 28px; }
+    #turno { font-size: 18px; color: #333; margin-bottom: 10px; }
+    button.accion {
+        padding: 8px 16px;
+        margin: 5px;
+        font-size: 15px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+
+<h1>Tic Tac Toe 3D</h1>
+<div id="estado">Conectando...</div>
+<div id="turno"></div>
+<div id="tablero"></div>
+<button class="accion" onclick="pedirReinicio()">Reiniciar Partida</button>
+
+<script>
+const socket = io();
+
+const LADO = 4;
+let miJugador = null;
+let salaId = null;
+let miTurno = false;
+let terminado = false;
+
+const tablero = document.getElementById('tablero');
+const estado = document.getElementById('estado');
+const turnoLbl = document.getElementById('turno');
+
+// Crea las 64 casillas y las acomoda en "escalera" (igual que la version de escritorio)
+const casillas = [];
+for (let i = 0; i < 64; i++) {
+    const z = Math.floor(i / 16);
+    const y = Math.floor((i % 16) / 4);
+    const x = i % 4;
+
+    const div = document.createElement('div');
+    div.className = 'casilla vacia';
+    div.dataset.i = i;
+    div.addEventListener('click', () => jugar(i));
+
+    const fila = y + (LADO - 1 - z) * LADO;
+    const columna = x + z * LADO;
+    div.style.gridRow = (fila + 1);
+    div.style.gridColumn = (columna + 1);
+
+    tablero.appendChild(div);
+    casillas.push(div);
+}
+
+socket.on('connect', () => {
+    estado.textContent = 'Buscando pareja...';
+    socket.emit('buscar_partida');
+});
+
+socket.on('esperando', () => {
+    estado.textContent = 'Esperando que se conecte un rival...';
+});
+
+socket.on('inicio', (datos) => {
+    miJugador = datos.jugador;
+    salaId = datos.sala;
+    miTurno = (miJugador === 0);
+    terminado = false;
+    estado.textContent = 'Partida encontrada. Juegas como ' + (miJugador === 0 ? 'X' : 'O');
+    actualizarTurno();
+});
+
+socket.on('jugada', (datos) => {
+    const i = datos.i;
+    const jugador = datos.jugador;
+    const div = casillas[i];
+    div.textContent = jugador === 0 ? 'X' : 'O';
+    div.classList.remove('vacia');
+    div.classList.add(jugador === 0 ? 'x' : 'o');
+
+    if (datos.ganadora) {
+        datos.ganadora.forEach(([cx, cy, cz]) => {
+            const idx = cz * 16 + cy * 4 + cx;
+            casillas[idx].classList.add('ganadora');
+        });
+        terminado = true;
+        estado.textContent = 'Jugador ' + (jugador + 1) + ' GANO';
+        turnoLbl.textContent = '';
+    } else {
+        miTurno = ((1 - jugador) === miJugador);
+        actualizarTurno();
+    }
+});
+
+socket.on('jugada_invalida', (datos) => {
+    estado.textContent = 'Jugada invalida: ' + datos.motivo;
+});
+
+socket.on('reiniciada', () => {
+    casillas.forEach(div => {
+        div.textContent = '';
+        div.className = 'casilla vacia';
+    });
+    terminado = false;
+    miTurno = (miJugador === 0);
+    estado.textContent = 'Partida reiniciada';
+    actualizarTurno();
+});
+
+socket.on('rival_desconectado', () => {
+    estado.textContent = 'El rival se desconecto';
+    turnoLbl.textContent = '';
+    terminado = true;
+});
+
+function actualizarTurno() {
+    if (terminado) return;
+    turnoLbl.textContent = miTurno ? 'Tu turno' : 'Turno del rival';
+}
+
+function jugar(i) {
+    if (terminado || !miTurno) return;
+    socket.emit('jugar', {i: i});
+}
+
+function pedirReinicio() {
+    socket.emit('reiniciar');
+}
+</script>
+
+</body>
+</html>
