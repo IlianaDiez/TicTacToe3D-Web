@@ -1,4 +1,4 @@
-flask
-   flask-socketio
-   eventlet==0.33.3
-   gunicorn
+Flask
+Flask-SocketIO
+eventlet==0.40.2
+gunicorn
