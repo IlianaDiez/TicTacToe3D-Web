@@ -1,12 +1,6 @@
 """
-Tic Tac Toe 3D - Version WEB (Flask + Socket.IO)
----------------------------------------------------
-Reemplaza los sockets crudos por una pagina web para que cualquiera
-se conecte solo abriendo un link en el navegador, sin instalar Python.
-
-Emparejamiento igual que el servidor_central.py: el primero que entra
-espera, el segundo lo empareja y arranca una sala. Puede haber muchas
-salas (parejas) jugando a la vez.
+Tic Tac Toe 3D - Flask + SocketIO + Three.js
+Servidor WebSocket para multiplayer en tiempo real
 """
 
 from flask import Flask, render_template
@@ -14,12 +8,14 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 import uuid
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'tictactoe3d-secreto'
+app.config['SECRET_KEY'] = 'tictactoe3d-secreto-v2'
 
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    async_mode="gevent"
+    async_mode="gevent",
+    ping_timeout=60,
+    ping_interval=25
 )
 
 LADO = 4
@@ -33,9 +29,9 @@ DIRECCIONES = [
 ]
 
 # ---------------- Estado del servidor ----------------
-esperando = None                 # sid del jugador esperando pareja
-salas = {}                       # sala_id -> datos de la partida
-sid_a_sala = {}                  # sid -> sala_id (para saber en que sala esta cada quien)
+esperando = None
+salas = {}
+sid_a_sala = {}
 
 
 def tablero_vacio():
@@ -74,7 +70,6 @@ def index():
 
 @socketio.on('buscar_partida')
 def buscar_partida():
-    """El cliente pide emparejarse en cuanto carga la pagina."""
     global esperando
     from flask import request
     sid = request.sid
@@ -85,13 +80,12 @@ def buscar_partida():
         return
 
     if esperando == sid:
-        return  # ya esta esperando, evita duplicados
+        return
 
-    # Emparejar
     pareja_sid = esperando
     esperando = None
 
-    sala_id = str(uuid.uuid4())[:8]
+    sala_id = str(uuid.uuid4())[:8].upper()
     salas[sala_id] = {
         'jugadas': tablero_vacio(),
         'turno': 0,
