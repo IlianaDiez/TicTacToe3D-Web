@@ -10,16 +10,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-    --bg: #0a0e17;
-    --bg-card: rgba(15, 23, 42, 0.85);
-    --border: rgba(148, 163, 184, 0.15);
+    --bg: #0f172a;
+    --bg-card: rgba(30, 41, 59, 0.7);
+    --border: rgba(148, 163, 184, 0.2);
     --accent-blue: #3b82f6;
     --accent-cyan: #06b6d4;
     --accent-orange: #f97316;
     --accent-pink: #ec4899;
     --text: #e2e8f0;
     --text-dim: #94a3b8;
-    --glass: rgba(30, 41, 59, 0.6);
+    --glass: rgba(51, 65, 85, 0.5);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,7 +35,7 @@ body {
 
 /* ===== SIDEBAR IZQUIERDO ===== */
 .sidebar-left {
-    width: 280px;
+    width: 260px;
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -52,40 +52,12 @@ body {
 }
 
 .card-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--text-dim);
     margin-bottom: 12px;
-}
-
-.online-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(34, 197, 94, 0.15);
-    color: #22c55e;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.online-badge::before {
-    content: '';
-    width: 6px; height: 6px;
-    background: #22c55e;
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
 }
 
 .player-row {
@@ -95,7 +67,6 @@ body {
     padding: 10px;
     border-radius: 12px;
     background: var(--glass);
-    margin-bottom: 8px;
 }
 
 .player-icon {
@@ -112,6 +83,7 @@ body {
 .player-name { font-weight: 600; font-size: 14px; }
 .player-tag { font-size: 11px; color: var(--text-dim); }
 .player-status { font-size: 11px; color: #22c55e; font-weight: 500; }
+.player-status.offline { color: #ef4444; }
 
 .status-game { display: flex; align-items: center; gap: 10px; }
 .status-icon {
@@ -123,20 +95,8 @@ body {
 }
 .status-text { font-size: 13px; color: var(--text-dim); line-height: 1.4; }
 .status-text strong { color: #22c55e; }
-
-.how-to-win { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
-.how-to-win li { list-style: none; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.dot { width: 8px; height: 8px; border-radius: 50%; }
-.dot-blue { background: var(--accent-blue); }
-.dot-green { background: #22c55e; }
-.dot-purple { background: #a855f7; }
-
-.server-status {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 12px; color: var(--text-dim);
-    margin-top: auto;
-    padding-top: 10px;
-}
+.status-text strong.waiting { color: #f97316; }
+.status-text strong.lost { color: #ef4444; }
 
 /* ===== CENTRO ===== */
 .main-center {
@@ -150,7 +110,7 @@ body {
 
 .title-area {
     text-align: center;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
 }
 
 .title-area h1 {
@@ -163,10 +123,19 @@ body {
     letter-spacing: -1px;
 }
 
-.title-area p { color: var(--text-dim); font-size: 14px; margin-top: 4px; }
+.server-conn {
+    text-align: center;
+    font-size: 12px;
+    color: #22c55e;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
 
 #canvas-container {
-    width: 600px; height: 500px;
+    width: 650px; height: 520px;
     position: relative;
 }
 
@@ -181,41 +150,9 @@ canvas { display: block; }
 .axis-y { bottom: 40px; left: 40px; color: #22c55e; }
 .axis-z { top: 20px; left: 40px; color: var(--accent-blue); }
 
-.layer-selector {
-    display: flex;
-    gap: 10px;
-    margin-top: 16px;
-}
-
-.layer-btn {
-    width: 48px; height: 48px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background: var(--glass);
-    color: var(--text);
-    font-size: 18px; font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.layer-btn:hover { border-color: var(--accent-blue); }
-.layer-btn.active {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: var(--accent-blue);
-    box-shadow: 0 0 20px rgba(59,130,246,0.3);
-}
-
-.layer-label {
-    font-size: 12px;
-    color: var(--text-dim);
-    margin-top: 8px;
-    text-align: center;
-}
-.layer-label span { color: var(--accent-blue); font-weight: 600; }
-
 /* ===== SIDEBAR DERECHO ===== */
 .sidebar-right {
-    width: 300px;
+    width: 260px;
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -232,31 +169,6 @@ canvas { display: block; }
 }
 .last-move-info { font-size: 13px; }
 .last-move-info .pos { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
-.last-move-info .time { color: var(--text-dim); font-size: 11px; margin-top: 2px; }
-
-.win-lines { font-size: 12px; color: var(--text-dim); line-height: 1.7; }
-.win-lines li { list-style: none; display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
-
-.controls-list { font-size: 12px; color: var(--text-dim); line-height: 1.8; }
-.controls-list li { list-style: none; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.ctrl-icon { width: 24px; text-align: center; font-size: 14px; }
-
-.room-code {
-    display: flex; align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: var(--text-dim);
-}
-
-.room-code code {
-    background: var(--glass);
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-family: 'SF Mono', monospace;
-    font-size: 13px;
-    color: var(--text);
-    border: 1px solid var(--border);
-}
 
 .btn-restart {
     width: 100%;
@@ -273,24 +185,12 @@ canvas { display: block; }
     justify-content: center;
     gap: 8px;
     transition: all 0.2s;
-    margin-top: 4px;
+    margin-top: auto;
 }
 
 .btn-restart:hover {
     transform: translateY(-1px);
     box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
-}
-
-.footer-game {
-    text-align: center;
-    font-size: 11px;
-    color: var(--text-dim);
-    margin-top: auto;
-    padding-top: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
 }
 
 /* Modal */
@@ -335,23 +235,6 @@ canvas { display: block; }
 
 .modal-btn:hover { transform: translateY(-1px); }
 
-/* Connection status */
-.conn-status {
-    position: fixed;
-    top: 16px; left: 50%;
-    transform: translateX(-50%);
-    padding: 8px 20px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    z-index: 50;
-    transition: all 0.3s;
-}
-
-.conn-connected { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
-.conn-disconnected { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
-.conn-connecting { background: rgba(234,179,8,0.15); color: #eab308; border: 1px solid rgba(234,179,8,0.3); }
-
 /* Esperando pantalla */
 .waiting-screen {
     position: fixed; inset: 0;
@@ -395,16 +278,8 @@ canvas { display: block; }
     <p>Esperando que se conecte un oponente</p>
 </div>
 
-<!-- Connection Status -->
-<div id="conn-status" class="conn-status conn-connecting">Conectando al servidor...</div>
-
 <!-- SIDEBAR IZQUIERDO -->
 <div class="sidebar-left">
-  <div class="card">
-    <div class="online-badge">Multijugador Online</div>
-    <div style="font-size:12px;color:var(--text-dim);margin-top:6px;">Juega contra otro jugador</div>
-  </div>
-
   <div class="card">
     <div class="card-header">TU TURNO</div>
     <div class="player-row" id="player-x-row">
@@ -431,36 +306,22 @@ canvas { display: block; }
   <div class="card">
     <div class="card-header">ESTADO</div>
     <div class="status-game">
-      <div class="status-icon">⚔️</div>
+      <div class="status-icon" id="status-icon">⏳</div>
       <div class="status-text">
         <strong id="game-status">Buscando partida...</strong><br>
         <span id="game-substatus">Esperando rival...</span>
       </div>
     </div>
   </div>
-
-  <div class="card">
-    <div class="card-header">CÓMO GANAR</div>
-    <div class="how-to-win">
-      Forma 4 en línea en cualquier dirección:
-      <ul style="margin-top:8px;">
-        <li><span class="dot dot-blue"></span> Horizontales (X, Y, Z)</li>
-        <li><span class="dot dot-green"></span> Diagonales</li>
-        <li><span class="dot dot-purple"></span> Diagonales cruzadas</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="server-status">
-    <span>🌐</span> Conectado al servidor
-  </div>
 </div>
 
 <!-- CENTRO -->
 <div class="main-center">
   <div class="title-area">
-    <h1>🎲 TIC TAC TOE 3D</h1>
-    <p>Conecta 4 en línea en cualquier dirección para ganar</p>
+    <h1>TIC TAC TOE 3D</h1>
+  </div>
+  <div class="server-conn">
+    <span>🌐</span> <span id="conn-text">Conectado al servidor</span>
   </div>
 
   <div id="canvas-container">
@@ -468,70 +329,24 @@ canvas { display: block; }
     <div class="axis-labels axis-y">Y →</div>
     <div class="axis-labels axis-z">Z ↑</div>
   </div>
-
-  <div class="layer-selector">
-    <button class="layer-btn active" data-layer="0">1</button>
-    <button class="layer-btn" data-layer="1">2</button>
-    <button class="layer-btn" data-layer="2">3</button>
-    <button class="layer-btn" data-layer="3">4</button>
-  </div>
-  <div class="layer-label">VISTA POR CAPAS (EJE Z) — Capa actual: <span id="current-layer">1 (Frontal)</span></div>
 </div>
 
 <!-- SIDEBAR DERECHO -->
 <div class="sidebar-right">
   <div class="card">
-    <div class="card-header">SALA</div>
-    <div class="room-code">
-      <span>SALA:</span>
-      <code id="room-code">----</code>
-      <span style="cursor:pointer;" onclick="copyRoom()">📋</span>
-    </div>
-    <div style="font-size:12px;color:#22c55e;margin-top:6px;">● Jugadores en línea: <span id="online-count">1</span></div>
-  </div>
-
-  <div class="card">
     <div class="card-header">ÚLTIMA JUGADA</div>
     <div class="last-move">
-      <div class="last-move-icon player-x" id="last-move-icon">X</div>
+      <div class="last-move-icon player-x" id="last-move-icon">-</div>
       <div class="last-move-info">
         <div><strong id="last-move-player">-</strong></div>
         <div class="pos">Posición: <span id="last-move-pos">-</span></div>
-        <div class="time" id="last-move-time">-</div>
       </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-header">LÍNEAS GANADORAS</div>
-    <div class="win-lines">
-      Hay <strong>76</strong> formas diferentes de ganar:
-      <ul style="margin-top:8px;">
-        <li><span class="dot dot-blue"></span> <strong>48</strong> Líneas rectas<br><span style="margin-left:16px;">(ejes X, Y, Z)</span></li>
-        <li><span class="dot dot-green"></span> <strong>24</strong> Diagonales</li>
-        <li><span class="dot dot-purple"></span> <strong>4</strong> Diagonales cruzadas</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-header">CONTROLES</div>
-    <div class="controls-list">
-      <ul>
-        <li><span class="ctrl-icon">🖱️</span> Arrastra para rotar</li>
-        <li><span class="ctrl-icon">🔍</span> Rueda para acercar/alejar</li>
-        <li><span class="ctrl-icon">👆</span> Haz clic en una casilla para jugar</li>
-      </ul>
     </div>
   </div>
 
   <button class="btn-restart" onclick="pedirReinicio()">
     <span>🔄</span> REINICIAR PARTIDA
   </button>
-
-  <div class="footer-game">
-    <span>🎲</span> Tic Tac Toe 3D — 4x4x4
-  </div>
 </div>
 
 <!-- Modal de fin de juego -->
@@ -553,13 +368,14 @@ const CELL_SIZE = 1.2;
 const SPACING = 1.6;
 const OFFSET = ((GRID_SIZE - 1) * SPACING) / 2;
 
-const COLOR_EMPTY = 0x1e3a5f;
-const COLOR_EMPTY_EMISSIVE = 0x0a1628;
+const COLOR_EMPTY = 0x3b5a7c;
+const COLOR_EMPTY_EMISSIVE = 0x1a2d42;
 const COLOR_X = 0x3b82f6;
 const COLOR_O = 0xf97316;
 const COLOR_WIN = 0x22c55e;
+const COLOR_WIN_EMISSIVE = 0x16a34a;
 
-// Estado del juego (igual que tu app.py original)
+// Estado del juego
 let board = Array(GRID_SIZE).fill(null).map(() =>
   Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null))
 );
@@ -568,9 +384,8 @@ let miJugador = null;
 let salaId = null;
 let miTurno = false;
 let terminado = false;
-let selectedLayer = 0;
 
-// Socket.IO (igual que tu código original)
+// Socket.IO
 const socket = io();
 
 // Three.js
@@ -582,9 +397,10 @@ let previousMousePosition = { x: 0, y: 0 };
 let cameraAngle = { theta: Math.PI / 4, phi: Math.PI / 3 };
 let cameraRadius = 14;
 
-// ===================== SOCKET.IO EVENTS (TU LÓGICA ORIGINAL) =====================
+// ===================== SOCKET.IO EVENTS =====================
 socket.on('connect', () => {
-    updateConnStatus('connected', 'Conectado al servidor');
+    document.getElementById('conn-text').textContent = 'Conectado al servidor';
+    document.getElementById('conn-text').style.color = '#22c55e';
     socket.emit('buscar_partida');
 });
 
@@ -601,13 +417,13 @@ socket.on('inicio', (datos) => {
     terminado = false;
 
     document.getElementById('waiting-screen').style.display = 'none';
-    document.getElementById('room-code').textContent = salaId;
-    document.getElementById('online-count').textContent = '2';
-    document.getElementById('rival-status').textContent = 'En línea';
 
     if (miJugador === 0) {
         document.getElementById('tag-x').style.display = 'inline';
     }
+
+    document.getElementById('rival-status').textContent = 'En línea';
+    document.getElementById('rival-status').className = 'player-status';
 
     updateTurnUI();
 });
@@ -662,13 +478,16 @@ socket.on('reiniciada', () => {
 socket.on('rival_desconectado', () => {
     terminado = true;
     document.getElementById('game-status').textContent = 'Rival desconectado';
+    document.getElementById('game-status').className = 'lost';
     document.getElementById('game-substatus').textContent = 'El oponente abandonó la partida';
     document.getElementById('rival-status').textContent = 'Desconectado';
-    document.getElementById('rival-status').style.color = '#ef4444';
+    document.getElementById('rival-status').className = 'player-status offline';
+    document.getElementById('status-icon').textContent = '❌';
 });
 
 socket.on('disconnect', () => {
-    updateConnStatus('disconnected', 'Desconectado del servidor');
+    document.getElementById('conn-text').textContent = 'Desconectado del servidor';
+    document.getElementById('conn-text').style.color = '#ef4444';
 });
 
 // ===================== THREE.JS =====================
@@ -676,7 +495,7 @@ function initThree() {
     const container = document.getElementById('canvas-container');
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0e17);
+    scene.background = new THREE.Color(0x0f172a);
 
     camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
     updateCameraPosition();
@@ -687,21 +506,25 @@ function initThree() {
     renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+    const ambientLight = new THREE.AmbientLight(0x64748b, 0.8);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
     dirLight.position.set(10, 15, 10);
     dirLight.castShadow = true;
     scene.add(dirLight);
 
-    const blueLight = new THREE.PointLight(0x3b82f6, 0.5, 20);
+    const blueLight = new THREE.PointLight(0x3b82f6, 0.6, 25);
     blueLight.position.set(-8, 5, -8);
     scene.add(blueLight);
 
-    const orangeLight = new THREE.PointLight(0xf97316, 0.5, 20);
+    const orangeLight = new THREE.PointLight(0xf97316, 0.6, 25);
     orangeLight.position.set(8, -5, 8);
     scene.add(orangeLight);
+
+    const fillLight = new THREE.PointLight(0x94a3b8, 0.4, 30);
+    fillLight.position.set(0, 0, 10);
+    scene.add(fillLight);
 
     createGrid();
     createAxes();
@@ -734,13 +557,15 @@ function createGrid() {
                 const material = new THREE.MeshPhysicalMaterial({
                     color: COLOR_EMPTY,
                     emissive: COLOR_EMPTY_EMISSIVE,
-                    emissiveIntensity: 0.3,
+                    emissiveIntensity: 0.4,
                     transparent: true,
-                    opacity: 0.6,
-                    roughness: 0.2,
-                    metalness: 0.8,
-                    transmission: 0.3,
+                    opacity: 0.7,
+                    roughness: 0.15,
+                    metalness: 0.7,
+                    transmission: 0.2,
                     thickness: 0.5,
+                    clearcoat: 0.3,
+                    clearcoatRoughness: 0.1,
                 });
 
                 const mesh = new THREE.Mesh(geometry, material);
@@ -749,15 +574,15 @@ function createGrid() {
                     y * SPACING - OFFSET,
                     z * SPACING - OFFSET
                 );
-                mesh.userData = { x, y, z, occupied: false, originalOpacity: 0.6 };
+                mesh.userData = { x, y, z, occupied: false, originalOpacity: 0.7 };
                 scene.add(mesh);
                 cells.push(mesh);
 
                 const edges = new THREE.EdgesGeometry(geometry);
                 const lineMaterial = new THREE.LineBasicMaterial({
-                    color: 0x4a6fa5,
+                    color: 0x60a5fa,
                     transparent: true,
-                    opacity: 0.4
+                    opacity: 0.5
                 });
                 const line = new THREE.LineSegments(edges, lineMaterial);
                 mesh.add(line);
@@ -819,13 +644,13 @@ function createAxisNumber(text, x, y, z, color) {
     scene.add(sprite);
 }
 
-// ===================== SÍMBOLOS X / O =====================
+// ===================== SÍMBOLOS =====================
 function createX(x, y, z) {
     const group = new THREE.Group();
     const material = new THREE.MeshPhysicalMaterial({
         color: COLOR_X,
         emissive: COLOR_X,
-        emissiveIntensity: 0.6,
+        emissiveIntensity: 0.8,
         roughness: 0.1,
         metalness: 0.5,
     });
@@ -849,7 +674,7 @@ function createX(x, y, z) {
     const glowMat = new THREE.MeshBasicMaterial({
         color: COLOR_X,
         transparent: true,
-        opacity: 0.1
+        opacity: 0.15
     });
     const glow = new THREE.Mesh(glowGeo, glowMat);
     group.add(glow);
@@ -866,7 +691,7 @@ function createO(x, y, z) {
     const material = new THREE.MeshPhysicalMaterial({
         color: COLOR_O,
         emissive: COLOR_O,
-        emissiveIntensity: 0.6,
+        emissiveIntensity: 0.8,
         roughness: 0.1,
         metalness: 0.5,
     });
@@ -885,7 +710,7 @@ function createO(x, y, z) {
     const glowMat = new THREE.MeshBasicMaterial({
         color: COLOR_O,
         transparent: true,
-        opacity: 0.1
+        opacity: 0.15
     });
     const glow = new THREE.Mesh(glowGeo, glowMat);
     group.add(glow);
@@ -961,15 +786,21 @@ function onClick(e) {
 function updateTurnUI() {
     const status = document.getElementById('game-status');
     const substatus = document.getElementById('game-substatus');
+    const icon = document.getElementById('status-icon');
+
     if (terminado) return;
     if (miTurno) {
         status.textContent = '¡Tu turno!';
-        status.style.color = '#22c55e';
+        status.className = '';
         substatus.textContent = 'Selecciona una casilla para hacer tu jugada.';
+        icon.textContent = '✅';
+        icon.style.background = 'rgba(34, 197, 94, 0.15)';
     } else {
         status.textContent = 'Turno del rival';
-        status.style.color = '#f97316';
+        status.className = 'waiting';
         substatus.textContent = 'Esperando la jugada del oponente...';
+        icon.textContent = '⏳';
+        icon.style.background = 'rgba(249, 115, 22, 0.15)';
     }
 }
 
@@ -978,7 +809,6 @@ function updateLastMove(player, x, y, z) {
     document.getElementById('last-move-icon').className = 'last-move-icon player-' + player.toLowerCase();
     document.getElementById('last-move-player').textContent = 'Jugador ' + player;
     document.getElementById('last-move-pos').textContent = '(' + (x+1) + ', ' + (y+1) + ', ' + (z+1) + ')';
-    document.getElementById('last-move-time').textContent = 'Hace un momento';
 }
 
 function highlightWin(winCells) {
@@ -986,17 +816,30 @@ function highlightWin(winCells) {
         const cell = cells.find(c => c.userData.x === x && c.userData.y === y && c.userData.z === z);
         if (cell) {
             cell.material.color.setHex(COLOR_WIN);
-            cell.material.emissive.setHex(COLOR_WIN);
-            cell.material.emissiveIntensity = 0.8;
-            cell.material.opacity = 0.9;
+            cell.material.emissive.setHex(COLOR_WIN_EMISSIVE);
+            cell.material.emissiveIntensity = 1.2;
+            cell.material.opacity = 0.95;
+
+            // Animación de pulso para las celdas ganadoras
+            pulseCell(cell);
         }
     }
 }
 
-function updateConnStatus(state, text) {
-    const el = document.getElementById('conn-status');
-    el.className = 'conn-status conn-' + state;
-    el.textContent = text;
+function pulseCell(cell) {
+    let growing = true;
+    function pulse() {
+        if (growing) {
+            cell.material.emissiveIntensity += 0.03;
+            if (cell.material.emissiveIntensity >= 1.5) growing = false;
+        } else {
+            cell.material.emissiveIntensity -= 0.03;
+            if (cell.material.emissiveIntensity <= 0.8) growing = true;
+        }
+        if (!terminado) return;
+        requestAnimationFrame(pulse);
+    }
+    pulse();
 }
 
 function showModal(title, msg) {
@@ -1028,49 +871,20 @@ function resetGame() {
         cell.userData.occupied = false;
         cell.material.color.setHex(COLOR_EMPTY);
         cell.material.emissive.setHex(COLOR_EMPTY_EMISSIVE);
-        cell.material.emissiveIntensity = 0.3;
+        cell.material.emissiveIntensity = 0.4;
         cell.material.opacity = cell.userData.originalOpacity;
     });
 
     document.getElementById('last-move-icon').textContent = '-';
+    document.getElementById('last-move-icon').className = 'last-move-icon player-x';
     document.getElementById('last-move-player').textContent = '-';
     document.getElementById('last-move-pos').textContent = '-';
-    document.getElementById('last-move-time').textContent = '-';
+
+    document.getElementById('rival-status').textContent = 'En línea';
+    document.getElementById('rival-status').className = 'player-status';
 
     updateTurnUI();
     closeModal();
-}
-
-function copyRoom() {
-    const code = document.getElementById('room-code').textContent;
-    if (code !== '----') {
-        navigator.clipboard.writeText(code);
-        alert('Código de sala copiado: ' + code);
-    }
-}
-
-// Layer selector
-document.querySelectorAll('.layer-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        selectedLayer = parseInt(btn.dataset.layer);
-        const labels = ['1 (Frontal)', '2', '3', '4 (Trasera)'];
-        document.getElementById('current-layer').textContent = labels[selectedLayer];
-        highlightLayer(selectedLayer);
-    });
-});
-
-function highlightLayer(layer) {
-    cells.forEach(cell => {
-        if (cell.userData.z === layer) {
-            cell.material.opacity = 0.8;
-            cell.material.emissiveIntensity = 0.5;
-        } else if (!cell.userData.occupied) {
-            cell.material.opacity = 0.3;
-            cell.material.emissiveIntensity = 0.1;
-        }
-    });
 }
 
 // ===================== ANIMACIÓN =====================
