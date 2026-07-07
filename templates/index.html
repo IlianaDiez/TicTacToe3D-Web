@@ -523,6 +523,56 @@ canvas { display: block; }
     font-family: 'Courier New', monospace;
     letter-spacing: 1px;
 }
+
+/* ===== NOTIFICACIÓN DE VICTORIA TEMPORAL ===== */
+.victory-notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.9), rgba(22, 163, 74, 0.9));
+    border: 2px solid #22c55e;
+    border-radius: 16px;
+    padding: 16px 32px;
+    z-index: 150;
+    text-align: center;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(34, 197, 94, 0.3);
+    animation: victorySlideIn 0.5s ease-out;
+}
+
+@keyframes victorySlideIn {
+    from { transform: translateX(-50%) translateY(-100px); opacity: 0; }
+    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+.victory-notification .victory-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 4px;
+}
+
+.victory-notification .victory-type {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+}
+
+.victory-notification .victory-timer {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 8px;
+}
+
+/* Overlay bloqueador de interacción durante espera */
+.game-blocked-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 80;
+    pointer-events: all;
+}
 </style>
 <base target="_blank">
 </head>
@@ -577,6 +627,12 @@ canvas { display: block; }
     <h2>Esperando rival...</h2>
     <p>Tu oponente se está conectando a la sala</p>
 </div>
+
+<!-- NOTIFICACIÓN DE VICTORIA (aparece inmediatamente) -->
+<div id="victory-notification" style="display:none;"></div>
+
+<!-- OVERLAY BLOQUEADOR -->
+<div id="game-blocked" class="game-blocked-overlay" style="display:none;"></div>
 
 <!-- SIDEBAR IZQUIERDO -->
 <div class="sidebar-left">
@@ -661,7 +717,7 @@ canvas { display: block; }
   </button>
 </div>
 
-<!-- Modal de fin de juego -->
+<!-- Modal de fin de juego (aparece después de 1 minuto) -->
 <div id="game-modal" class="modal-overlay" style="display:none;">
   <div class="modal">
     <h2 id="modal-title">¡Ganaste!</h2>
@@ -690,6 +746,9 @@ const COLOR_O = 0xf97316;
 const COLOR_WIN = 0x22c55e;
 const COLOR_WIN_EMISSIVE = 0x16a34a;
 
+// Tiempo de espera antes de mostrar el modal (en milisegundos)
+const DELAY_VICTORIA = 60000; // 60 segundos = 1 minuto
+
 // Estado del juego
 let board = Array(GRID_SIZE).fill(null).map(() =>
   Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null))
@@ -700,6 +759,7 @@ let salaId = null;
 let miTurno = false;
 let terminado = false;
 let enSala = false;
+let victoryTimerInterval = null;
 
 // Socket.IO
 const socket = io(window.location.origin);
@@ -718,14 +778,12 @@ socket.on('connect', () => {
     document.getElementById('conn-text').textContent = 'Conectado al servidor';
     document.getElementById('conn-text').style.color = '#22c55e';
 
-    // Enviar ping cada 5 segundos para mantener conexión viva
     if (window.pingInterval) clearInterval(window.pingInterval);
     window.pingInterval = setInterval(() => {
         if (socket.connected) socket.emit('ping_vivo');
     }, 5000);
 });
 
-// Sala creada exitosamente
 socket.on('sala_creada', (datos) => {
     salaId = datos.sala;
     document.getElementById('room-code-display').textContent = salaId;
@@ -735,19 +793,16 @@ socket.on('sala_creada', (datos) => {
     enSala = true;
 });
 
-// Unido a sala exitosamente (esperando rival)
 socket.on('unido_a_sala', (datos) => {
     salaId = datos.sala;
     document.getElementById('sala-info').textContent = salaId;
     enSala = true;
-    // Si solo hay un jugador, mostrar espera
     if (!datos.listo) {
         document.getElementById('room-screen').style.display = 'none';
         document.getElementById('waiting-screen').style.display = 'flex';
     }
 });
 
-// Error al unirse/crear sala
 socket.on('error_sala', (datos) => {
     const status = document.getElementById('room-status');
     status.textContent = datos.motivo;
@@ -758,7 +813,6 @@ socket.on('error_sala', (datos) => {
     }, 3000);
 });
 
-// Inicio de partida (ambos jugadores listos)
 socket.on('inicio', (datos) => {
     miJugador = datos.jugador;
     salaId = datos.sala;
@@ -769,7 +823,6 @@ socket.on('inicio', (datos) => {
     document.getElementById('room-screen').style.display = 'none';
     document.getElementById('waiting-screen').style.display = 'none';
 
-    // Actualizar panel ESTADO
     if (miJugador === 0) {
         document.getElementById('mi-icono').textContent = 'X';
         document.getElementById('mi-icono').className = 'estado-icon x';
@@ -813,20 +866,45 @@ socket.on('jugada', (datos) => {
 
     updateLastMove(jugador === 0 ? 'X' : 'O', x, y, z);
 
+    // ===================== CAMBIO: VICTORIA CON DELAY DE 1 MINUTO =====================
     if (datos.ganadora) {
         terminado = true;
         const winCells = datos.ganadora.map(c => [c[0], c[1], c[2]]);
         highlightWin(winCells);
+        
+        // Actualizar panel de turno inmediatamente
+        updateTurnoDisplay('terminado', jugador);
+        
+        // Mostrar notificación de victoria inmediatamente
         const gano = (jugador === miJugador);
         const tipo = datos.tipo_ganador || "Línea ganadora";
-        showModal(
-            gano ? '¡Ganaste!' : '¡Perdiste!',
-            gano ? 'Has conectado 4 en línea.' : 'Tu rival conectó 4 en línea.',
-            tipo
-        );
-        updateTurnoDisplay('terminado', jugador);
+        showVictoryNotification(gano, tipo);
+        
+        // Bloquear interacción con el tablero (pero permitir rotar cámara)
+        document.getElementById('game-blocked').style.display = 'block';
+        
+        // Iniciar cuenta regresiva
+        let segundosRestantes = DELAY_VICTORIA / 1000;
+        updateVictoryTimer(segundosRestantes);
+        
+        victoryTimerInterval = setInterval(() => {
+            segundosRestantes--;
+            updateVictoryTimer(segundosRestantes);
+            
+            if (segundosRestantes <= 0) {
+                clearInterval(victoryTimerInterval);
+                hideVictoryNotification();
+                showModal(
+                    gano ? '¡Ganaste!' : '¡Perdiste!',
+                    gano ? 'Has conectado 4 en línea.' : 'Tu rival conectó 4 en línea.',
+                    tipo
+                );
+            }
+        }, 1000);
+        
         return;
     }
+    // ==================================================================================
 
     currentPlayer = 1 - jugador;
     miTurno = (currentPlayer === miJugador);
@@ -870,6 +948,29 @@ socket.on('disconnect', () => {
     document.getElementById('conn-text').textContent = 'Desconectado del servidor';
     document.getElementById('conn-text').style.color = '#ef4444';
 });
+
+// ===================== NOTIFICACIÓN DE VICTORIA =====================
+function showVictoryNotification(gano, tipo) {
+    const notif = document.getElementById('victory-notification');
+    notif.innerHTML = `
+        <div class="victory-title">${gano ? '🏆 ¡VICTORIA!' : '😞 DERROTA'}</div>
+        <div class="victory-type">${tipo}</div>
+        <div class="victory-timer" id="victory-timer">Resultado final en 60s...</div>
+    `;
+    notif.style.display = 'block';
+}
+
+function updateVictoryTimer(segundos) {
+    const timer = document.getElementById('victory-timer');
+    if (timer) {
+        timer.textContent = `Resultado final en ${segundos}s...`;
+    }
+}
+
+function hideVictoryNotification() {
+    document.getElementById('victory-notification').style.display = 'none';
+    document.getElementById('game-blocked').style.display = 'none';
+}
 
 // ===================== FUNCIONES DE SALA =====================
 function crearSala() {
@@ -1322,6 +1423,7 @@ function pedirReinicio() {
 
 window.addEventListener('beforeunload', () => {
     if (window.pingInterval) clearInterval(window.pingInterval);
+    if (victoryTimerInterval) clearInterval(victoryTimerInterval);
 });
 
 function resetGame() {
@@ -1331,6 +1433,13 @@ function resetGame() {
     currentPlayer = 0;
     miTurno = (miJugador === 0);
     terminado = false;
+
+    // Limpiar notificación y timer
+    hideVictoryNotification();
+    if (victoryTimerInterval) {
+        clearInterval(victoryTimerInterval);
+        victoryTimerInterval = null;
+    }
 
     symbols.forEach(s => scene.remove(s.group));
     symbols = [];
