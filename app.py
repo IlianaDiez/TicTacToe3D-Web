@@ -28,6 +28,22 @@ DIRECCIONES = [
     (1, 1, 1), (1, 1, -1), (1, -1, 1), (1, -1, -1),
 ]
 
+NOMBRES_DIRECCION = {
+    (1, 0, 0): "Horizontal (eje X)",
+    (0, 1, 0): "Vertical (eje Y)",
+    (0, 0, 1): "Profundidad (eje Z)",
+    (1, 1, 0): "Diagonal frontal",
+    (1, -1, 0): "Diagonal frontal inversa",
+    (0, 1, 1): "Diagonal vertical",
+    (0, 1, -1): "Diagonal vertical inversa",
+    (1, 0, 1): "Diagonal horizontal",
+    (1, 0, -1): "Diagonal horizontal inversa",
+    (1, 1, 1): "Diagonal cruzada principal",
+    (1, 1, -1): "Diagonal cruzada",
+    (1, -1, 1): "Diagonal cruzada",
+    (1, -1, -1): "Diagonal cruzada inversa",
+}
+
 # ---------------- Estado del servidor ----------------
 esperando = None
 salas = {}
@@ -59,8 +75,9 @@ def hay_ganador(jugadas, x, y, z):
             celdas.append((cx, cy, cz))
             suma += jugadas[cz][cy][cx]
         if abs(suma) == LADO:
-            return celdas
-    return None
+            tipo = NOMBRES_DIRECCION.get(d, "Línea desconocida")
+            return celdas, tipo
+    return None, None
 
 
 @app.route('/')
@@ -128,11 +145,12 @@ def jugar(datos):
     valor = -1 if quien == 0 else 1
     sala['jugadas'][z][y][x] = valor
 
-    ganadora = hay_ganador(sala['jugadas'], x, y, z)
+    ganadora, tipo_ganador = hay_ganador(sala['jugadas'], x, y, z)
     resultado = {
         'i': i,
         'jugador': quien,
         'ganadora': [list(c) for c in ganadora] if ganadora else None,
+        'tipo_ganador': tipo_ganador,
     }
 
     if ganadora:
