@@ -60,43 +60,97 @@ body {
     margin-bottom: 12px;
 }
 
-.player-row {
+/* PANEL TURNO */
+.turno-display {
+    text-align: center;
+    padding: 16px;
+    border-radius: 12px;
+    background: var(--glass);
+    border: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.turno-display.tu-turno {
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.turno-display.turno-rival {
+    border-color: #f97316;
+    background: rgba(249, 115, 22, 0.1);
+}
+
+.turno-display.terminado {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.turno-icon {
+    font-size: 36px;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.turno-icon.x { color: #60a5fa; text-shadow: 0 0 20px rgba(59,130,246,0.5); }
+.turno-icon.o { color: #fb923c; text-shadow: 0 0 20px rgba(249,115,22,0.5); }
+
+.turno-texto {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.turno-texto.tu { color: #22c55e; }
+.turno-texto.rival { color: #f97316; }
+
+.turno-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+}
+
+/* PANEL ESTADO / CONEXIÓN */
+.estado-display {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.estado-jugador {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     padding: 10px;
-    border-radius: 12px;
+    border-radius: 10px;
     background: var(--glass);
 }
 
-.player-icon {
-    width: 44px; height: 44px;
+.estado-icon {
+    width: 32px; height: 32px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 22px; font-weight: 800;
+    font-size: 14px; font-weight: 800;
 }
 
-.player-x { background: rgba(59, 130, 246, 0.2); color: #60a5fa; box-shadow: 0 0 20px rgba(59,130,246,0.3); }
-.player-o { background: rgba(249, 115, 22, 0.2); color: #fb923c; box-shadow: 0 0 20px rgba(249,115,22,0.3); }
+.estado-icon.x { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+.estado-icon.o { background: rgba(249, 115, 22, 0.2); color: #fb923c; }
 
-.player-info { flex: 1; }
-.player-name { font-weight: 600; font-size: 14px; }
-.player-tag { font-size: 11px; color: var(--text-dim); }
-.player-status { font-size: 11px; color: #22c55e; font-weight: 500; }
-.player-status.offline { color: #ef4444; }
-
-.status-game { display: flex; align-items: center; gap: 10px; }
-.status-icon {
-    width: 32px; height: 32px;
-    border-radius: 8px;
-    background: rgba(34, 197, 94, 0.15);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
+.estado-info { flex: 1; }
+.estado-nombre { font-weight: 600; font-size: 13px; }
+.estado-conexion {
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
-.status-text { font-size: 13px; color: var(--text-dim); line-height: 1.4; }
-.status-text strong { color: #22c55e; }
-.status-text strong.waiting { color: #f97316; }
-.status-text strong.lost { color: #ef4444; }
+
+.estado-conexion.online { color: #22c55e; }
+.estado-conexion.offline { color: #ef4444; }
+
+.dot-conn {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
 
 /* ===== CENTRO ===== */
 .main-center {
@@ -286,36 +340,39 @@ canvas { display: block; }
 
 <!-- SIDEBAR IZQUIERDO -->
 <div class="sidebar-left">
+  <!-- PANEL TURNO (único, ambos lo ven igual) -->
   <div class="card">
-    <div class="card-header">TU TURNO</div>
-    <div class="player-row" id="player-x-row">
-      <div class="player-icon player-x">X</div>
-      <div class="player-info">
-        <div class="player-name">Jugador X <span id="tag-x" style="display:none;background:var(--accent-blue);color:white;padding:2px 8px;border-radius:4px;font-size:10px;margin-left:4px;">Tú</span></div>
-        <div class="player-tag">Tu símbolo</div>
-      </div>
+    <div class="card-header">TURNO</div>
+    <div class="turno-display" id="turno-display">
+      <div class="turno-icon" id="turno-icon">-</div>
+      <div class="turno-texto" id="turno-texto">Esperando...</div>
+      <div class="turno-sub" id="turno-sub">Buscando oponente</div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-header">RIVAL</div>
-    <div class="player-row" id="player-o-row">
-      <div class="player-icon player-o">O</div>
-      <div class="player-info">
-        <div class="player-name">Jugador O</div>
-        <div class="player-status" id="rival-status">Esperando...</div>
-        <div class="player-tag">Símbolo del rival</div>
-      </div>
-    </div>
-  </div>
-
+  <!-- PANEL ESTADO / CONEXIÓN -->
   <div class="card">
     <div class="card-header">ESTADO</div>
-    <div class="status-game">
-      <div class="status-icon" id="status-icon">⏳</div>
-      <div class="status-text">
-        <strong id="game-status">Buscando partida...</strong><br>
-        <span id="game-substatus">Esperando rival...</span>
+    <div class="estado-display">
+      <!-- Yo -->
+      <div class="estado-jugador">
+        <div class="estado-icon x" id="mi-icono">X</div>
+        <div class="estado-info">
+          <div class="estado-nombre" id="mi-nombre">Tú: Jugador X</div>
+          <div class="estado-conexion online">
+            <span class="dot-conn"></span> En línea
+          </div>
+        </div>
+      </div>
+      <!-- Rival -->
+      <div class="estado-jugador">
+        <div class="estado-icon o" id="rival-icono">O</div>
+        <div class="estado-info">
+          <div class="estado-nombre" id="rival-nombre">Rival: Jugador O</div>
+          <div class="estado-conexion online" id="rival-conexion">
+            <span class="dot-conn"></span> <span id="rival-con-text">Esperando...</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -372,8 +429,8 @@ canvas { display: block; }
 // ===================== CONFIGURACIÓN =====================
 const GRID_SIZE = 4;
 const CELL_SIZE = 1.0;
-const SPACING_XY = 1.6;   // Separación en X e Y
-const SPACING_Z = 2.2;    // Separación en Z (profundidad) - MÁS GRANDE para ver capas
+const SPACING_XY = 1.6;
+const SPACING_Z = 2.2;
 const OFFSET_XY = ((GRID_SIZE - 1) * SPACING_XY) / 2;
 const OFFSET_Z = ((GRID_SIZE - 1) * SPACING_Z) / 2;
 
@@ -415,8 +472,7 @@ socket.on('connect', () => {
 
 socket.on('esperando', () => {
     document.getElementById('waiting-screen').style.display = 'flex';
-    document.getElementById('game-status').textContent = 'Esperando rival...';
-    document.getElementById('game-substatus').textContent = 'Buscando oponente';
+    updateTurnoDisplay('esperando');
 });
 
 socket.on('inicio', (datos) => {
@@ -427,14 +483,27 @@ socket.on('inicio', (datos) => {
 
     document.getElementById('waiting-screen').style.display = 'none';
 
+    // Actualizar panel ESTADO con quién soy yo y quién es el rival
     if (miJugador === 0) {
-        document.getElementById('tag-x').style.display = 'inline';
+        document.getElementById('mi-icono').textContent = 'X';
+        document.getElementById('mi-icono').className = 'estado-icon x';
+        document.getElementById('mi-nombre').textContent = 'Tú: Jugador X';
+        document.getElementById('rival-icono').textContent = 'O';
+        document.getElementById('rival-icono').className = 'estado-icon o';
+        document.getElementById('rival-nombre').textContent = 'Rival: Jugador O';
+    } else {
+        document.getElementById('mi-icono').textContent = 'O';
+        document.getElementById('mi-icono').className = 'estado-icon o';
+        document.getElementById('mi-nombre').textContent = 'Tú: Jugador O';
+        document.getElementById('rival-icono').textContent = 'X';
+        document.getElementById('rival-icono').className = 'estado-icon x';
+        document.getElementById('rival-nombre').textContent = 'Rival: Jugador X';
     }
 
-    document.getElementById('rival-status').textContent = 'En línea';
-    document.getElementById('rival-status').className = 'player-status';
+    document.getElementById('rival-con-text').textContent = 'En línea';
+    document.getElementById('rival-conexion').className = 'estado-conexion online';
 
-    updateTurnUI();
+    updateTurnoDisplay('juego');
 });
 
 socket.on('jugada', (datos) => {
@@ -469,17 +538,31 @@ socket.on('jugada', (datos) => {
             gano ? 'Has conectado 4 en línea.' : 'Tu rival conectó 4 en línea.',
             tipo
         );
+        updateTurnoDisplay('terminado', jugador);
         return;
     }
 
-    miTurno = ((1 - jugador) === miJugador);
     currentPlayer = 1 - jugador;
-    updateTurnUI();
+    miTurno = (currentPlayer === miJugador);
+    updateTurnoDisplay('juego');
 });
 
 socket.on('jugada_invalida', (datos) => {
-    document.getElementById('game-status').textContent = 'Jugada inválida';
-    document.getElementById('game-substatus').textContent = datos.motivo;
+    // No cambia el turno, solo muestra error temporal
+    const turnoTexto = document.getElementById('turno-texto');
+    const turnoSub = document.getElementById('turno-sub');
+    const oldText = turnoTexto.textContent;
+    const oldSub = turnoSub.textContent;
+
+    turnoTexto.textContent = 'Jugada inválida';
+    turnoTexto.className = 'turno-texto';
+    turnoTexto.style.color = '#ef4444';
+    turnoSub.textContent = datos.motivo;
+
+    setTimeout(() => {
+        updateTurnoDisplay('juego');
+        turnoTexto.style.color = '';
+    }, 2000);
 });
 
 socket.on('reiniciada', () => {
@@ -488,18 +571,69 @@ socket.on('reiniciada', () => {
 
 socket.on('rival_desconectado', () => {
     terminado = true;
-    document.getElementById('game-status').textContent = 'Rival desconectado';
-    document.getElementById('game-status').className = 'lost';
-    document.getElementById('game-substatus').textContent = 'El oponente abandonó la partida';
-    document.getElementById('rival-status').textContent = 'Desconectado';
-    document.getElementById('rival-status').className = 'player-status offline';
-    document.getElementById('status-icon').textContent = '❌';
+    document.getElementById('rival-con-text').textContent = 'Desconectado';
+    document.getElementById('rival-conexion').className = 'estado-conexion offline';
+    updateTurnoDisplay('desconectado');
 });
 
 socket.on('disconnect', () => {
     document.getElementById('conn-text').textContent = 'Desconectado del servidor';
     document.getElementById('conn-text').style.color = '#ef4444';
 });
+
+// ===================== ACTUALIZAR PANEL TURNO =====================
+function updateTurnoDisplay(estado, jugadorGanador) {
+    const display = document.getElementById('turno-display');
+    const icon = document.getElementById('turno-icon');
+    const texto = document.getElementById('turno-texto');
+    const sub = document.getElementById('turno-sub');
+
+    display.className = 'turno-display';
+    texto.className = 'turno-texto';
+    texto.style.color = '';
+
+    if (estado === 'esperando') {
+        display.classList.add('turno-rival');
+        icon.textContent = '⏳';
+        icon.className = 'turno-icon';
+        texto.textContent = 'Esperando rival';
+        sub.textContent = 'Buscando oponente...';
+    }
+    else if (estado === 'desconectado') {
+        display.classList.add('terminado');
+        icon.textContent = '❌';
+        icon.className = 'turno-icon';
+        texto.textContent = 'Rival desconectado';
+        sub.textContent = 'El oponente abandonó la partida';
+    }
+    else if (estado === 'terminado') {
+        display.classList.add('terminado');
+        const simbolo = jugadorGanador === 0 ? 'X' : 'O';
+        icon.textContent = simbolo;
+        icon.className = 'turno-icon ' + simbolo.toLowerCase();
+        texto.textContent = '¡Ganó Jugador ' + simbolo + '!';
+        sub.textContent = 'Partida finalizada';
+    }
+    else if (estado === 'juego') {
+        const turnoDe = currentPlayer === 0 ? 'X' : 'O';
+        const esMiTurno = (currentPlayer === miJugador);
+
+        icon.textContent = turnoDe;
+        icon.className = 'turno-icon ' + turnoDe.toLowerCase();
+
+        if (esMiTurno) {
+            display.classList.add('tu-turno');
+            texto.textContent = '¡Tu turno!';
+            texto.classList.add('tu');
+            sub.textContent = 'Selecciona una casilla para jugar';
+        } else {
+            display.classList.add('turno-rival');
+            texto.textContent = 'Turno de Jugador ' + turnoDe;
+            texto.classList.add('rival');
+            sub.textContent = 'Esperando la jugada del oponente...';
+        }
+    }
+}
 
 // ===================== THREE.JS =====================
 function initThree() {
@@ -794,27 +928,6 @@ function onClick(e) {
 }
 
 // ===================== UI HELPERS =====================
-function updateTurnUI() {
-    const status = document.getElementById('game-status');
-    const substatus = document.getElementById('game-substatus');
-    const icon = document.getElementById('status-icon');
-
-    if (terminado) return;
-    if (miTurno) {
-        status.textContent = '¡Tu turno!';
-        status.className = '';
-        substatus.textContent = 'Selecciona una casilla para hacer tu jugada.';
-        icon.textContent = '✅';
-        icon.style.background = 'rgba(34, 197, 94, 0.15)';
-    } else {
-        status.textContent = 'Turno del rival';
-        status.className = 'waiting';
-        substatus.textContent = 'Esperando la jugada del oponente...';
-        icon.textContent = '⏳';
-        icon.style.background = 'rgba(249, 115, 22, 0.15)';
-    }
-}
-
 function updateLastMove(player, x, y, z) {
     document.getElementById('last-move-icon').textContent = player;
     document.getElementById('last-move-icon').className = 'last-move-icon player-' + player.toLowerCase();
@@ -889,10 +1002,10 @@ function resetGame() {
     document.getElementById('last-move-player').textContent = '-';
     document.getElementById('last-move-pos').textContent = '-';
 
-    document.getElementById('rival-status').textContent = 'En línea';
-    document.getElementById('rival-status').className = 'player-status';
+    document.getElementById('rival-con-text').textContent = 'En línea';
+    document.getElementById('rival-conexion').className = 'estado-conexion online';
 
-    updateTurnUI();
+    updateTurnoDisplay('juego');
     closeModal();
 }
 
