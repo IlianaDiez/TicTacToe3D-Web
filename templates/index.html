@@ -247,6 +247,173 @@ canvas { display: block; }
     box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
 }
 
+/* ===== PANTALLA DE SALA (LOGIN) ===== */
+.room-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+}
+
+.room-screen h2 {
+    font-size: 32px;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+}
+
+.room-screen .subtitle {
+    color: var(--text-dim);
+    font-size: 16px;
+    margin-bottom: 32px;
+}
+
+.room-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.room-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.room-input-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.room-input {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--glass);
+    color: var(--text);
+    font-size: 16px;
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+
+.room-input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.room-input::placeholder {
+    color: var(--text-dim);
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.room-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.room-btn.primary {
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+    color: white;
+}
+
+.room-btn.secondary {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+.room-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+}
+
+.room-btn.secondary:hover {
+    box-shadow: 0 8px 25px rgba(148, 163, 184, 0.15);
+}
+
+.room-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-dim);
+    font-size: 13px;
+    margin: 4px 0;
+}
+
+.room-divider::before, .room-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.room-code-display {
+    background: var(--glass);
+    border: 2px dashed var(--accent-cyan);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+}
+
+.room-code-display .label {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+}
+
+.room-code-display .code {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent-cyan);
+    letter-spacing: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+.room-code-display .hint {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+}
+
+.room-status {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-dim);
+    min-height: 20px;
+}
+
+.room-status.error { color: #ef4444; }
+.room-status.success { color: #22c55e; }
+
 /* Modal */
 .modal-overlay {
     position: fixed; inset: 0;
@@ -326,21 +493,94 @@ canvas { display: block; }
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Copy button for code */
+.btn-copy {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s;
+}
+
+.btn-copy:hover {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+}
+
+/* Sala info en sidebar */
+.sala-info {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: center;
+    padding: 8px;
+    background: var(--glass);
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+}
 </style>
 <base target="_blank">
 </head>
 <body>
 
-<!-- Pantalla de espera -->
-<div id="waiting-screen" class="waiting-screen">
+<!-- PANTALLA DE SALA (LOGIN) -->
+<div id="room-screen" class="room-screen">
+    <h2>🔷 TIC TAC TOE 3D</h2>
+    <p class="subtitle">Entra a una sala para jugar con un amigo</p>
+
+    <div class="room-card" id="room-card-join">
+        <div class="room-input-group">
+            <label>Código de Sala</label>
+            <input type="text" id="room-code-input" class="room-input" placeholder="Ej: ABC123" maxlength="8" autocomplete="off">
+        </div>
+        <button class="room-btn primary" onclick="unirseSala()">
+            <span>🚪</span> Unirse a Sala
+        </button>
+
+        <div class="room-divider">o</div>
+
+        <button class="room-btn secondary" onclick="crearSala()">
+            <span>➕</span> Crear Nueva Sala
+        </button>
+
+        <div class="room-status" id="room-status"></div>
+    </div>
+
+    <!-- Pantalla de sala creada (esperando rival) -->
+    <div class="room-card" id="room-card-created" style="display:none;">
+        <div class="room-code-display">
+            <div class="label">Tu código de sala</div>
+            <div class="code" id="room-code-display">ABC123</div>
+            <div class="hint">Comparte este código con tu amigo</div>
+            <button class="btn-copy" onclick="copiarCodigo()">📋 Copiar</button>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-top:8px;">
+            <div class="spinner" style="width:24px; height:24px; margin:0;"></div>
+            <span style="color:var(--text-dim); font-size:14px;">Esperando que tu amigo se una...</span>
+        </div>
+
+        <button class="room-btn secondary" style="margin-top:12px;" onclick="volverMenu()">
+            <span>←</span> Volver
+        </button>
+    </div>
+</div>
+
+<!-- Pantalla de espera (dentro del juego, esperando rival) -->
+<div id="waiting-screen" class="waiting-screen" style="display:none;">
     <div class="spinner"></div>
-    <h2>Buscando rival...</h2>
-    <p>Esperando que se conecte un oponente</p>
+    <h2>Esperando rival...</h2>
+    <p>Tu oponente se está conectando a la sala</p>
 </div>
 
 <!-- SIDEBAR IZQUIERDO -->
 <div class="sidebar-left">
-  <!-- PANEL TURNO (único, ambos lo ven igual) -->
+  <!-- PANEL TURNO -->
   <div class="card">
     <div class="card-header">TURNO</div>
     <div class="turno-display" id="turno-display">
@@ -376,6 +616,15 @@ canvas { display: block; }
       </div>
     </div>
   </div>
+
+  <!-- INFO SALA -->
+  <div class="card">
+    <div class="card-header">SALA</div>
+    <div class="sala-info" id="sala-info">No conectado</div>
+    <button class="room-btn secondary" style="margin-top:10px; padding:10px; font-size:12px;" onclick="salirSala()">
+        <span>🚪</span> Salir de la Sala
+    </button>
+  </div>
 </div>
 
 <!-- CENTRO -->
@@ -384,7 +633,7 @@ canvas { display: block; }
     <h1>TIC TAC TOE 3D</h1>
   </div>
   <div class="server-conn">
-    <span>🌐</span> <span id="conn-text">Conectado al servidor</span>
+    <span>🌐</span> <span id="conn-text">Conectando...</span>
   </div>
 
   <div id="canvas-container">
@@ -450,6 +699,7 @@ let miJugador = null;
 let salaId = null;
 let miTurno = false;
 let terminado = false;
+let enSala = false;
 
 // Socket.IO
 const socket = io();
@@ -467,7 +717,6 @@ let cameraRadius = 16;
 socket.on('connect', () => {
     document.getElementById('conn-text').textContent = 'Conectado al servidor';
     document.getElementById('conn-text').style.color = '#22c55e';
-    socket.emit('buscar_partida');
 
     // Enviar ping cada 5 segundos para mantener conexión viva
     if (window.pingInterval) clearInterval(window.pingInterval);
@@ -476,20 +725,51 @@ socket.on('connect', () => {
     }, 5000);
 });
 
-socket.on('esperando', () => {
-    document.getElementById('waiting-screen').style.display = 'flex';
-    updateTurnoDisplay('esperando');
+// Sala creada exitosamente
+socket.on('sala_creada', (datos) => {
+    salaId = datos.sala;
+    document.getElementById('room-code-display').textContent = salaId;
+    document.getElementById('sala-info').textContent = salaId;
+    document.getElementById('room-card-join').style.display = 'none';
+    document.getElementById('room-card-created').style.display = 'flex';
+    enSala = true;
 });
 
+// Unido a sala exitosamente (esperando rival)
+socket.on('unido_a_sala', (datos) => {
+    salaId = datos.sala;
+    document.getElementById('sala-info').textContent = salaId;
+    enSala = true;
+    // Si solo hay un jugador, mostrar espera
+    if (!datos.listo) {
+        document.getElementById('room-screen').style.display = 'none';
+        document.getElementById('waiting-screen').style.display = 'flex';
+    }
+});
+
+// Error al unirse/crear sala
+socket.on('error_sala', (datos) => {
+    const status = document.getElementById('room-status');
+    status.textContent = datos.motivo;
+    status.className = 'room-status error';
+    setTimeout(() => {
+        status.textContent = '';
+        status.className = 'room-status';
+    }, 3000);
+});
+
+// Inicio de partida (ambos jugadores listos)
 socket.on('inicio', (datos) => {
     miJugador = datos.jugador;
     salaId = datos.sala;
     miTurno = (miJugador === 0);
     terminado = false;
+    enSala = true;
 
+    document.getElementById('room-screen').style.display = 'none';
     document.getElementById('waiting-screen').style.display = 'none';
 
-    // Actualizar panel ESTADO con quién soy yo y quién es el rival
+    // Actualizar panel ESTADO
     if (miJugador === 0) {
         document.getElementById('mi-icono').textContent = 'X';
         document.getElementById('mi-icono').className = 'estado-icon x';
@@ -590,6 +870,58 @@ socket.on('disconnect', () => {
     document.getElementById('conn-text').textContent = 'Desconectado del servidor';
     document.getElementById('conn-text').style.color = '#ef4444';
 });
+
+// ===================== FUNCIONES DE SALA =====================
+function crearSala() {
+    const status = document.getElementById('room-status');
+    status.textContent = 'Creando sala...';
+    status.className = 'room-status';
+    socket.emit('crear_sala');
+}
+
+function unirseSala() {
+    const codigo = document.getElementById('room-code-input').value.trim().toUpperCase();
+    if (!codigo) {
+        const status = document.getElementById('room-status');
+        status.textContent = 'Ingresa un código de sala';
+        status.className = 'room-status error';
+        return;
+    }
+    const status = document.getElementById('room-status');
+    status.textContent = 'Uniéndose a sala...';
+    status.className = 'room-status';
+    socket.emit('unirse_sala', { sala: codigo });
+}
+
+function copiarCodigo() {
+    const code = document.getElementById('room-code-display').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+        const btn = document.querySelector('.btn-copy');
+        const original = btn.textContent;
+        btn.textContent = '✅ Copiado';
+        setTimeout(() => btn.textContent = original, 2000);
+    });
+}
+
+function volverMenu() {
+    document.getElementById('room-card-created').style.display = 'none';
+    document.getElementById('room-card-join').style.display = 'flex';
+    document.getElementById('room-status').textContent = '';
+    if (salaId) {
+        socket.emit('salir_sala', { sala: salaId });
+    }
+    salaId = null;
+    enSala = false;
+}
+
+function salirSala() {
+    if (confirm('¿Seguro que quieres salir de la sala?')) {
+        if (salaId) {
+            socket.emit('salir_sala', { sala: salaId });
+        }
+        location.reload();
+    }
+}
 
 // ===================== ACTUALIZAR PANEL TURNO =====================
 function updateTurnoDisplay(estado, jugadorGanador) {
