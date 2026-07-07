@@ -9,9 +9,6 @@ espera, el segundo lo empareja y arranca una sala. Puede haber muchas
 salas (parejas) jugando a la vez.
 """
 
-import eventlet
-eventlet.monkey_patch()
-
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import uuid
@@ -22,7 +19,7 @@ app.config['SECRET_KEY'] = 'tictactoe3d-secreto'
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    async_mode="eventlet"
+    async_mode="gevent"
 )
 
 LADO = 4
