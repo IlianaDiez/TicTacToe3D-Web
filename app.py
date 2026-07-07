@@ -1,12 +1,14 @@
 """
 Tic Tac Toe 3D - Flask + SocketIO + Three.js
-Sistema de emparejamiento robusto con re-conexión automática
+Sistema de salas privadas con código de acceso
+Desplegable en WAN (Render, VPS, etc.)
 """
 
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
-import uuid
 import time
+import random
+import string
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tictactoe3d-secreto-v2'
@@ -46,10 +48,14 @@ NOMBRES_DIRECCION = {
 }
 
 # ---------------- Estado del servidor ----------------
-esperando = None
-salas = {}
-sid_a_sala = {}
-last_ping = {}  # sid -> timestamp del último ping
+salas = {}        # codigo_sala -> {jugadas, turno, terminado, jugadores: {sid: num}}
+sid_a_sala = {}   # sid -> codigo_sala
+last_ping = {}    # sid -> timestamp del último ping
+
+
+def generar_codigo_sala():
+    """Genera un código de sala de 6 caracteres alfanuméricos"""
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
 
 def tablero_vacio():
@@ -83,23 +89,21 @@ def hay_ganador(jugadas, x, y, z):
 
 
 def limpiar_salas_muertas():
-    """Elimina salas donde un jugador se desconectó"""
-    global esperando
+    """Elimina salas donde todos los jugadores se desconectaron"""
     ahora = time.time()
-    # Limpiar jugador esperando si lleva más de 30 segundos
-    if esperando and ahora - last_ping.get(esperando, 0) > 30:
-        esperando = None
-    # Limpiar salas con jugadores desconectados
     salas_muertas = []
     for sala_id, sala in salas.items():
         jugadores_vivos = 0
         for sid_jugador in sala['jugadores']:
-            if ahora - last_ping.get(sid_jugador, 0) < 30:
+            if ahora - last_ping.get(sid_jugador, 0) < 60:
                 jugadores_vivos += 1
-        if jugadores_vivos < 2 and not sala['terminado']:
+        if jugadores_vivos == 0:
             salas_muertas.append(sala_id)
     for sala_id in salas_muertas:
         if sala_id in salas:
+            for sid in list(sid_a_sala.keys()):
+                if sid_a_sala[sid] == sala_id:
+                    del sid_a_sala[sid]
             del salas[sala_id]
 
 
@@ -114,55 +118,123 @@ def on_connect():
     last_ping[sid] = time.time()
 
 
-@socketio.on('buscar_partida')
-def buscar_partida():
-    global esperando
+# ===================== SISTEMA DE SALAS =====================
+
+@socketio.on('crear_sala')
+def crear_sala():
+    """Crea una nueva sala privada y devuelve el código"""
     sid = request.sid
     last_ping[sid] = time.time()
 
-    # Limpiar salas viejas antes de emparejar
     limpiar_salas_muertas()
 
-    # Si ya estaba en una sala, salir de ella primero
+    # Si ya estaba en una sala, salir primero
     sala_vieja = sid_a_sala.pop(sid, None)
     if sala_vieja and sala_vieja in salas:
         leave_room(sala_vieja, sid=sid)
-        emit('rival_desconectado', room=sala_vieja)
-        del salas[sala_vieja]
+        if sid in salas[sala_vieja]['jugadores']:
+            del salas[sala_vieja]['jugadores'][sid]
+        if len(salas[sala_vieja]['jugadores']) == 1:
+            emit('rival_desconectado', room=sala_vieja)
+        if len(salas[sala_vieja]['jugadores']) == 0:
+            del salas[sala_vieja]
 
-    if esperando is None:
-        esperando = sid
-        emit('esperando')
-        return
+    # Generar código único
+    codigo = generar_codigo_sala()
+    while codigo in salas:
+        codigo = generar_codigo_sala()
 
-    if esperando == sid:
-        return
-
-    # Verificar que el jugador esperando siga vivo
-    if time.time() - last_ping.get(esperando, 0) > 30:
-        esperando = sid
-        emit('esperando')
-        return
-
-    pareja_sid = esperando
-    esperando = None
-
-    sala_id = str(uuid.uuid4())[:8].upper()
-    salas[sala_id] = {
+    # Crear sala
+    salas[codigo] = {
         'jugadas': tablero_vacio(),
         'turno': 0,
         'terminado': False,
-        'jugadores': {pareja_sid: 0, sid: 1},
+        'jugadores': {sid: 0},
     }
-    sid_a_sala[pareja_sid] = sala_id
-    sid_a_sala[sid] = sala_id
+    sid_a_sala[sid] = codigo
 
-    join_room(sala_id, sid=pareja_sid)
-    join_room(sala_id, sid=sid)
+    join_room(codigo, sid=sid)
+    emit('sala_creada', {'sala': codigo})
 
-    emit('inicio', {'jugador': 0, 'sala': sala_id}, room=pareja_sid)
-    emit('inicio', {'jugador': 1, 'sala': sala_id}, room=sid)
 
+@socketio.on('unirse_sala')
+def unirse_sala(datos):
+    """Unirse a una sala existente con código"""
+    sid = request.sid
+    last_ping[sid] = time.time()
+    codigo = datos.get('sala', '').upper().strip()
+
+    if not codigo:
+        emit('error_sala', {'motivo': 'Código de sala requerido'})
+        return
+
+    limpiar_salas_muertas()
+
+    if codigo not in salas:
+        emit('error_sala', {'motivo': 'Sala no encontrada'})
+        return
+
+    sala = salas[codigo]
+
+    if len(sala['jugadores']) >= 2:
+        emit('error_sala', {'motivo': 'La sala ya está llena'})
+        return
+
+    if sala['terminado']:
+        emit('error_sala', {'motivo': 'La partida ya terminó'})
+        return
+
+    # Si ya estaba en otra sala, salir primero
+    sala_vieja = sid_a_sala.pop(sid, None)
+    if sala_vieja and sala_vieja in salas and sala_vieja != codigo:
+        leave_room(sala_vieja, sid=sid)
+        if sid in salas[sala_vieja]['jugadores']:
+            del salas[sala_vieja]['jugadores'][sid]
+        if len(salas[sala_vieja]['jugadores']) == 1:
+            emit('rival_desconectado', room=sala_vieja)
+        if len(salas[sala_vieja]['jugadores']) == 0:
+            del salas[sala_vieja]
+
+    # Unir al jugador
+    sala['jugadores'][sid] = 1
+    sid_a_sala[sid] = codigo
+    join_room(codigo, sid=sid)
+
+    emit('unido_a_sala', {'sala': codigo, 'listo': True})
+
+    # Notificar a ambos jugadores que inicia
+    creador_sid = None
+    for s, num in sala['jugadores'].items():
+        if num == 0:
+            creador_sid = s
+            break
+
+    if creador_sid:
+        emit('inicio', {'jugador': 0, 'sala': codigo}, room=creador_sid)
+
+    emit('inicio', {'jugador': 1, 'sala': codigo}, room=sid)
+
+
+@socketio.on('salir_sala')
+def salir_sala(datos):
+    """Salir de una sala (voluntariamente)"""
+    sid = request.sid
+    codigo = datos.get('sala', '')
+
+    if sid in sid_a_sala:
+        del sid_a_sala[sid]
+
+    if codigo and codigo in salas:
+        leave_room(codigo, sid=sid)
+        if sid in salas[codigo]['jugadores']:
+            del salas[codigo]['jugadores'][sid]
+        if len(salas[codigo]['jugadores']) >= 1:
+            emit('rival_desconectado', room=codigo)
+        if len(salas[codigo]['jugadores']) == 0:
+            del salas[codigo]
+
+
+# ===================== JUEGO =====================
 
 @socketio.on('ping_vivo')
 def ping_vivo():
@@ -228,27 +300,20 @@ def reiniciar():
 
 @socketio.on('disconnect')
 def al_desconectar():
-    global esperando
     sid = request.sid
-
-    if esperando == sid:
-        esperando = None
 
     sala_id = sid_a_sala.pop(sid, None)
     if sala_id and sala_id in salas:
+        if sid in salas[sala_id]['jugadores']:
+            del salas[sala_id]['jugadores'][sid]
         emit('rival_desconectado', room=sala_id)
-        # No borramos la sala inmediatamente, damos 10 segundos por si reconecta
-        def borrar_sala():
-            if sala_id in salas:
-                # Verificar si alguien sigue en la sala
-                for s in salas[sala_id]['jugadores']:
-                    if s != sid and time.time() - last_ping.get(s, 0) < 30:
-                        return
-                del salas[sala_id]
-        # Usar un timer simple en vez de threading
-        import threading
-        threading.Timer(10.0, borrar_sala).start()
+        if len(salas[sala_id]['jugadores']) == 0:
+            def borrar_sala():
+                if sala_id in salas and len(salas[sala_id]['jugadores']) == 0:
+                    del salas[sala_id]
+            import threading
+            threading.Timer(30.0, borrar_sala).start()
 
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=False)
