@@ -2,105 +2,596 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Tic Tac Toe 3D</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tic Tac Toe 3D - 4x4x4</title>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #f2f2f2;
-        text-align: center;
-        margin: 0;
-        padding: 20px;
-    }
-    #tablero {
-        display: grid;
-        grid-template-columns: repeat(16, 45px);
-        grid-template-rows: repeat(16, 45px);
-        gap: 2px;
-        justify-content: center;
-        margin: 20px auto;
-    }
-    .casilla {
-        width: 45px;
-        height: 45px;
-        border: 1px solid #999;
-        background: white;
-        font-size: 20px;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        user-select: none;
-    }
-    .casilla.vacia:hover {
-        background: #e0e0f0;
-    }
-    .casilla.x { color: #2b6fd6; }
-    .casilla.o { color: #d63b3b; }
-    .casilla.ganadora {
-        background: red !important;
-        color: yellow !important;
-    }
-    #estado { font-size: 20px; color: green; margin: 10px; min-height: 28px; }
-    #turno { font-size: 18px; color: #333; margin-bottom: 10px; }
-    button.accion {
-        padding: 8px 16px;
-        margin: 5px;
-        font-size: 15px;
-        cursor: pointer;
-    }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    --bg: #0a0e17;
+    --bg-card: rgba(15, 23, 42, 0.85);
+    --border: rgba(148, 163, 184, 0.15);
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --accent-orange: #f97316;
+    --accent-pink: #ec4899;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --glass: rgba(30, 41, 59, 0.6);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+}
+
+/* ===== SIDEBAR IZQUIERDO ===== */
+.sidebar-left {
+    width: 280px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 10;
+}
+
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    backdrop-filter: blur(12px);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+}
+
+.online-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.online-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: #22c55e;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.player-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 12px;
+    background: var(--glass);
+    margin-bottom: 8px;
+}
+
+.player-icon {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 800;
+}
+
+.player-x { background: rgba(59, 130, 246, 0.2); color: #60a5fa; box-shadow: 0 0 20px rgba(59,130,246,0.3); }
+.player-o { background: rgba(249, 115, 22, 0.2); color: #fb923c; box-shadow: 0 0 20px rgba(249,115,22,0.3); }
+
+.player-info { flex: 1; }
+.player-name { font-weight: 600; font-size: 14px; }
+.player-tag { font-size: 11px; color: var(--text-dim); }
+.player-status { font-size: 11px; color: #22c55e; font-weight: 500; }
+
+.status-game { display: flex; align-items: center; gap: 10px; }
+.status-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: rgba(34, 197, 94, 0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+}
+.status-text { font-size: 13px; color: var(--text-dim); line-height: 1.4; }
+.status-text strong { color: #22c55e; }
+
+.how-to-win { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+.how-to-win li { list-style: none; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot-blue { background: var(--accent-blue); }
+.dot-green { background: #22c55e; }
+.dot-purple { background: #a855f7; }
+
+.server-status {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--text-dim);
+    margin-top: auto;
+    padding-top: 10px;
+}
+
+/* ===== CENTRO ===== */
+.main-center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.title-area {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.title-area h1 {
+    font-size: 42px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan), var(--accent-pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -1px;
+}
+
+.title-area p { color: var(--text-dim); font-size: 14px; margin-top: 4px; }
+
+#canvas-container {
+    width: 600px; height: 500px;
+    position: relative;
+}
+
+canvas { display: block; }
+
+.axis-labels {
+    position: absolute;
+    pointer-events: none;
+    font-weight: 700; font-size: 18px;
+}
+.axis-x { bottom: 40px; right: 40px; color: var(--accent-pink); }
+.axis-y { bottom: 40px; left: 40px; color: #22c55e; }
+.axis-z { top: 20px; left: 40px; color: var(--accent-blue); }
+
+.layer-selector {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.layer-btn {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--glass);
+    color: var(--text);
+    font-size: 18px; font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.layer-btn:hover { border-color: var(--accent-blue); }
+.layer-btn.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 20px rgba(59,130,246,0.3);
+}
+
+.layer-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    text-align: center;
+}
+.layer-label span { color: var(--accent-blue); font-weight: 600; }
+
+/* ===== SIDEBAR DERECHO ===== */
+.sidebar-right {
+    width: 300px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 10;
+}
+
+.last-move { display: flex; align-items: center; gap: 12px; }
+.last-move-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px;
+}
+.last-move-info { font-size: 13px; }
+.last-move-info .pos { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+.last-move-info .time { color: var(--text-dim); font-size: 11px; margin-top: 2px; }
+
+.win-lines { font-size: 12px; color: var(--text-dim); line-height: 1.7; }
+.win-lines li { list-style: none; display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+
+.controls-list { font-size: 12px; color: var(--text-dim); line-height: 1.8; }
+.controls-list li { list-style: none; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.ctrl-icon { width: 24px; text-align: center; font-size: 14px; }
+
+.room-code {
+    display: flex; align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-dim);
+}
+
+.room-code code {
+    background: var(--glass);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-family: 'SF Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.btn-restart {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+    margin-top: 4px;
+}
+
+.btn-restart:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
+}
+
+.footer-game {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: auto;
+    padding-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+}
+
+.modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+}
+
+.modal h2 { font-size: 24px; margin-bottom: 8px; }
+.modal p { color: var(--text-dim); margin-bottom: 20px; }
+.modal-btns { display: flex; gap: 10px; justify-content: center; }
+
+.modal-btn {
+    padding: 10px 24px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--glass);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-btn.primary {
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+    border: none;
+}
+
+.modal-btn:hover { transform: translateY(-1px); }
+
+/* Connection status */
+.conn-status {
+    position: fixed;
+    top: 16px; left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 50;
+    transition: all 0.3s;
+}
+
+.conn-connected { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+.conn-disconnected { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+.conn-connecting { background: rgba(234,179,8,0.15); color: #eab308; border: 1px solid rgba(234,179,8,0.3); }
+
+/* Esperando pantalla */
+.waiting-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+}
+
+.waiting-screen h2 {
+    font-size: 32px;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 16px;
+}
+
+.waiting-screen p { color: var(--text-dim); font-size: 16px; }
+
+.spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent-blue);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
+<base target="_blank">
 </head>
 <body>
 
-<h1>Tic Tac Toe 3D</h1>
-<div id="estado">Conectando...</div>
-<div id="turno"></div>
-<div id="tablero"></div>
-<button class="accion" onclick="pedirReinicio()">Reiniciar Partida</button>
+<!-- Pantalla de espera -->
+<div id="waiting-screen" class="waiting-screen">
+    <div class="spinner"></div>
+    <h2>Buscando rival...</h2>
+    <p>Esperando que se conecte un oponente</p>
+</div>
+
+<!-- Connection Status -->
+<div id="conn-status" class="conn-status conn-connecting">Conectando al servidor...</div>
+
+<!-- SIDEBAR IZQUIERDO -->
+<div class="sidebar-left">
+  <div class="card">
+    <div class="online-badge">Multijugador Online</div>
+    <div style="font-size:12px;color:var(--text-dim);margin-top:6px;">Juega contra otro jugador</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">TU TURNO</div>
+    <div class="player-row" id="player-x-row">
+      <div class="player-icon player-x">X</div>
+      <div class="player-info">
+        <div class="player-name">Jugador X <span id="tag-x" style="display:none;background:var(--accent-blue);color:white;padding:2px 8px;border-radius:4px;font-size:10px;margin-left:4px;">Tú</span></div>
+        <div class="player-tag">Tu símbolo</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">RIVAL</div>
+    <div class="player-row" id="player-o-row">
+      <div class="player-icon player-o">O</div>
+      <div class="player-info">
+        <div class="player-name">Jugador O</div>
+        <div class="player-status" id="rival-status">Esperando...</div>
+        <div class="player-tag">Símbolo del rival</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">ESTADO</div>
+    <div class="status-game">
+      <div class="status-icon">⚔️</div>
+      <div class="status-text">
+        <strong id="game-status">Buscando partida...</strong><br>
+        <span id="game-substatus">Esperando rival...</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">CÓMO GANAR</div>
+    <div class="how-to-win">
+      Forma 4 en línea en cualquier dirección:
+      <ul style="margin-top:8px;">
+        <li><span class="dot dot-blue"></span> Horizontales (X, Y, Z)</li>
+        <li><span class="dot dot-green"></span> Diagonales</li>
+        <li><span class="dot dot-purple"></span> Diagonales cruzadas</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="server-status">
+    <span>🌐</span> Conectado al servidor
+  </div>
+</div>
+
+<!-- CENTRO -->
+<div class="main-center">
+  <div class="title-area">
+    <h1>🎲 TIC TAC TOE 3D</h1>
+    <p>Conecta 4 en línea en cualquier dirección para ganar</p>
+  </div>
+
+  <div id="canvas-container">
+    <div class="axis-labels axis-x">X →</div>
+    <div class="axis-labels axis-y">Y →</div>
+    <div class="axis-labels axis-z">Z ↑</div>
+  </div>
+
+  <div class="layer-selector">
+    <button class="layer-btn active" data-layer="0">1</button>
+    <button class="layer-btn" data-layer="1">2</button>
+    <button class="layer-btn" data-layer="2">3</button>
+    <button class="layer-btn" data-layer="3">4</button>
+  </div>
+  <div class="layer-label">VISTA POR CAPAS (EJE Z) — Capa actual: <span id="current-layer">1 (Frontal)</span></div>
+</div>
+
+<!-- SIDEBAR DERECHO -->
+<div class="sidebar-right">
+  <div class="card">
+    <div class="card-header">SALA</div>
+    <div class="room-code">
+      <span>SALA:</span>
+      <code id="room-code">----</code>
+      <span style="cursor:pointer;" onclick="copyRoom()">📋</span>
+    </div>
+    <div style="font-size:12px;color:#22c55e;margin-top:6px;">● Jugadores en línea: <span id="online-count">1</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">ÚLTIMA JUGADA</div>
+    <div class="last-move">
+      <div class="last-move-icon player-x" id="last-move-icon">X</div>
+      <div class="last-move-info">
+        <div><strong id="last-move-player">-</strong></div>
+        <div class="pos">Posición: <span id="last-move-pos">-</span></div>
+        <div class="time" id="last-move-time">-</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">LÍNEAS GANADORAS</div>
+    <div class="win-lines">
+      Hay <strong>76</strong> formas diferentes de ganar:
+      <ul style="margin-top:8px;">
+        <li><span class="dot dot-blue"></span> <strong>48</strong> Líneas rectas<br><span style="margin-left:16px;">(ejes X, Y, Z)</span></li>
+        <li><span class="dot dot-green"></span> <strong>24</strong> Diagonales</li>
+        <li><span class="dot dot-purple"></span> <strong>4</strong> Diagonales cruzadas</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">CONTROLES</div>
+    <div class="controls-list">
+      <ul>
+        <li><span class="ctrl-icon">🖱️</span> Arrastra para rotar</li>
+        <li><span class="ctrl-icon">🔍</span> Rueda para acercar/alejar</li>
+        <li><span class="ctrl-icon">👆</span> Haz clic en una casilla para jugar</li>
+      </ul>
+    </div>
+  </div>
+
+  <button class="btn-restart" onclick="pedirReinicio()">
+    <span>🔄</span> REINICIAR PARTIDA
+  </button>
+
+  <div class="footer-game">
+    <span>🎲</span> Tic Tac Toe 3D — 4x4x4
+  </div>
+</div>
+
+<!-- Modal de fin de juego -->
+<div id="game-modal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <h2 id="modal-title">¡Ganaste!</h2>
+    <p id="modal-msg">Has conectado 4 en línea.</p>
+    <div class="modal-btns">
+      <button class="modal-btn primary" onclick="pedirReinicio()">Nueva Partida</button>
+      <button class="modal-btn" onclick="closeModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
 
 <script>
-const socket = io();
+// ===================== CONFIGURACIÓN =====================
+const GRID_SIZE = 4;
+const CELL_SIZE = 1.2;
+const SPACING = 1.6;
+const OFFSET = ((GRID_SIZE - 1) * SPACING) / 2;
 
-const LADO = 4;
+const COLOR_EMPTY = 0x1e3a5f;
+const COLOR_EMPTY_EMISSIVE = 0x0a1628;
+const COLOR_X = 0x3b82f6;
+const COLOR_O = 0xf97316;
+const COLOR_WIN = 0x22c55e;
+
+// Estado del juego (igual que tu app.py original)
+let board = Array(GRID_SIZE).fill(null).map(() =>
+  Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null))
+);
+let currentPlayer = 0;
 let miJugador = null;
 let salaId = null;
 let miTurno = false;
 let terminado = false;
+let selectedLayer = 0;
 
-const tablero = document.getElementById('tablero');
-const estado = document.getElementById('estado');
-const turnoLbl = document.getElementById('turno');
+// Socket.IO (igual que tu código original)
+const socket = io();
 
-// Crea las 64 casillas y las acomoda en "escalera" (igual que la version de escritorio)
-const casillas = [];
-for (let i = 0; i < 64; i++) {
-    const z = Math.floor(i / 16);
-    const y = Math.floor((i % 16) / 4);
-    const x = i % 4;
+// Three.js
+let scene, camera, renderer, raycaster, mouse;
+let cells = [];
+let symbols = [];
+let isDragging = false;
+let previousMousePosition = { x: 0, y: 0 };
+let cameraAngle = { theta: Math.PI / 4, phi: Math.PI / 3 };
+let cameraRadius = 14;
 
-    const div = document.createElement('div');
-    div.className = 'casilla vacia';
-    div.dataset.i = i;
-    div.addEventListener('click', () => jugar(i));
-
-    const fila = y + (LADO - 1 - z) * LADO;
-    const columna = x + z * LADO;
-    div.style.gridRow = (fila + 1);
-    div.style.gridColumn = (columna + 1);
-
-    tablero.appendChild(div);
-    casillas.push(div);
-}
-
+// ===================== SOCKET.IO EVENTS (TU LÓGICA ORIGINAL) =====================
 socket.on('connect', () => {
-    estado.textContent = 'Buscando pareja...';
+    updateConnStatus('connected', 'Conectado al servidor');
     socket.emit('buscar_partida');
 });
 
 socket.on('esperando', () => {
-    estado.textContent = 'Esperando que se conecte un rival...';
+    document.getElementById('waiting-screen').style.display = 'flex';
+    document.getElementById('game-status').textContent = 'Esperando rival...';
+    document.getElementById('game-substatus').textContent = 'Buscando oponente';
 });
 
 socket.on('inicio', (datos) => {
@@ -108,67 +599,498 @@ socket.on('inicio', (datos) => {
     salaId = datos.sala;
     miTurno = (miJugador === 0);
     terminado = false;
-    estado.textContent = 'Partida encontrada. Juegas como ' + (miJugador === 0 ? 'X' : 'O');
-    actualizarTurno();
+
+    document.getElementById('waiting-screen').style.display = 'none';
+    document.getElementById('room-code').textContent = salaId;
+    document.getElementById('online-count').textContent = '2';
+    document.getElementById('rival-status').textContent = 'En línea';
+
+    if (miJugador === 0) {
+        document.getElementById('tag-x').style.display = 'inline';
+    }
+
+    updateTurnUI();
 });
 
 socket.on('jugada', (datos) => {
     const i = datos.i;
     const jugador = datos.jugador;
-    const div = casillas[i];
-    div.textContent = jugador === 0 ? 'X' : 'O';
-    div.classList.remove('vacia');
-    div.classList.add(jugador === 0 ? 'x' : 'o');
+    const z = Math.floor(i / 16);
+    const y = Math.floor((i % 16) / 4);
+    const x = i % 4;
+
+    board[x][y][z] = jugador === 0 ? 'X' : 'O';
+
+    const cell = cells.find(c => c.userData.x === x && c.userData.y === y && c.userData.z === z);
+    if (cell) {
+        cell.userData.occupied = true;
+        cell.material.opacity = 0.3;
+        cell.material.emissiveIntensity = 0.1;
+    }
+
+    if (jugador === 0) createX(x, y, z);
+    else createO(x, y, z);
+
+    updateLastMove(jugador === 0 ? 'X' : 'O', x, y, z);
 
     if (datos.ganadora) {
-        datos.ganadora.forEach(([cx, cy, cz]) => {
-            const idx = cz * 16 + cy * 4 + cx;
-            casillas[idx].classList.add('ganadora');
-        });
         terminado = true;
-        estado.textContent = 'Jugador ' + (jugador + 1) + ' GANO';
-        turnoLbl.textContent = '';
-    } else {
-        miTurno = ((1 - jugador) === miJugador);
-        actualizarTurno();
+        const winCells = datos.ganadora.map(c => [c[0], c[1], c[2]]);
+        highlightWin(winCells);
+        const gano = (jugador === miJugador);
+        showModal(
+            gano ? '¡Ganaste!' : '¡Perdiste!',
+            gano ? 'Has conectado 4 en línea.' : 'Tu rival conectó 4 en línea.'
+        );
+        return;
     }
+
+    miTurno = ((1 - jugador) === miJugador);
+    currentPlayer = 1 - jugador;
+    updateTurnUI();
 });
 
 socket.on('jugada_invalida', (datos) => {
-    estado.textContent = 'Jugada invalida: ' + datos.motivo;
+    document.getElementById('game-status').textContent = 'Jugada inválida';
+    document.getElementById('game-substatus').textContent = datos.motivo;
 });
 
 socket.on('reiniciada', () => {
-    casillas.forEach(div => {
-        div.textContent = '';
-        div.className = 'casilla vacia';
-    });
-    terminado = false;
-    miTurno = (miJugador === 0);
-    estado.textContent = 'Partida reiniciada';
-    actualizarTurno();
+    resetGame();
 });
 
 socket.on('rival_desconectado', () => {
-    estado.textContent = 'El rival se desconecto';
-    turnoLbl.textContent = '';
     terminado = true;
+    document.getElementById('game-status').textContent = 'Rival desconectado';
+    document.getElementById('game-substatus').textContent = 'El oponente abandonó la partida';
+    document.getElementById('rival-status').textContent = 'Desconectado';
+    document.getElementById('rival-status').style.color = '#ef4444';
 });
 
-function actualizarTurno() {
-    if (terminado) return;
-    turnoLbl.textContent = miTurno ? 'Tu turno' : 'Turno del rival';
+socket.on('disconnect', () => {
+    updateConnStatus('disconnected', 'Desconectado del servidor');
+});
+
+// ===================== THREE.JS =====================
+function initThree() {
+    const container = document.getElementById('canvas-container');
+
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0e17);
+
+    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+    updateCameraPosition();
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 15, 10);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+
+    const blueLight = new THREE.PointLight(0x3b82f6, 0.5, 20);
+    blueLight.position.set(-8, 5, -8);
+    scene.add(blueLight);
+
+    const orangeLight = new THREE.PointLight(0xf97316, 0.5, 20);
+    orangeLight.position.set(8, -5, 8);
+    scene.add(orangeLight);
+
+    createGrid();
+    createAxes();
+
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
+
+    renderer.domElement.addEventListener('mousedown', onMouseDown);
+    renderer.domElement.addEventListener('mousemove', onMouseMove);
+    renderer.domElement.addEventListener('mouseup', onMouseUp);
+    renderer.domElement.addEventListener('wheel', onWheel);
+    renderer.domElement.addEventListener('click', onClick);
+
+    animate();
 }
 
-function jugar(i) {
-    if (terminado || !miTurno) return;
-    socket.emit('jugar', {i: i});
+function updateCameraPosition() {
+    camera.position.x = cameraRadius * Math.sin(cameraAngle.phi) * Math.cos(cameraAngle.theta);
+    camera.position.y = cameraRadius * Math.cos(cameraAngle.phi);
+    camera.position.z = cameraRadius * Math.sin(cameraAngle.phi) * Math.sin(cameraAngle.theta);
+    camera.lookAt(0, 0, 0);
+}
+
+function createGrid() {
+    const geometry = new THREE.BoxGeometry(CELL_SIZE, CELL_SIZE, CELL_SIZE);
+
+    for (let x = 0; x < GRID_SIZE; x++) {
+        for (let y = 0; y < GRID_SIZE; y++) {
+            for (let z = 0; z < GRID_SIZE; z++) {
+                const material = new THREE.MeshPhysicalMaterial({
+                    color: COLOR_EMPTY,
+                    emissive: COLOR_EMPTY_EMISSIVE,
+                    emissiveIntensity: 0.3,
+                    transparent: true,
+                    opacity: 0.6,
+                    roughness: 0.2,
+                    metalness: 0.8,
+                    transmission: 0.3,
+                    thickness: 0.5,
+                });
+
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set(
+                    x * SPACING - OFFSET,
+                    y * SPACING - OFFSET,
+                    z * SPACING - OFFSET
+                );
+                mesh.userData = { x, y, z, occupied: false, originalOpacity: 0.6 };
+                scene.add(mesh);
+                cells.push(mesh);
+
+                const edges = new THREE.EdgesGeometry(geometry);
+                const lineMaterial = new THREE.LineBasicMaterial({
+                    color: 0x4a6fa5,
+                    transparent: true,
+                    opacity: 0.4
+                });
+                const line = new THREE.LineSegments(edges, lineMaterial);
+                mesh.add(line);
+            }
+        }
+    }
+}
+
+function createAxes() {
+    const xGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-OFFSET - 1, -OFFSET - 1, -OFFSET - 1),
+        new THREE.Vector3(OFFSET + 2, -OFFSET - 1, -OFFSET - 1)
+    ]);
+    const xMat = new THREE.LineDashedMaterial({ color: 0xec4899, dashSize: 0.3, gapSize: 0.2 });
+    const xLine = new THREE.Line(xGeo, xMat);
+    xLine.computeLineDistances();
+    scene.add(xLine);
+
+    const yGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-OFFSET - 1, -OFFSET - 1, -OFFSET - 1),
+        new THREE.Vector3(-OFFSET - 1, OFFSET + 2, -OFFSET - 1)
+    ]);
+    const yMat = new THREE.LineDashedMaterial({ color: 0x22c55e, dashSize: 0.3, gapSize: 0.2 });
+    const yLine = new THREE.Line(yGeo, yMat);
+    yLine.computeLineDistances();
+    scene.add(yLine);
+
+    const zGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-OFFSET - 1, -OFFSET - 1, -OFFSET - 1),
+        new THREE.Vector3(-OFFSET - 1, -OFFSET - 1, OFFSET + 2)
+    ]);
+    const zMat = new THREE.LineDashedMaterial({ color: 0x3b82f6, dashSize: 0.3, gapSize: 0.2 });
+    const zLine = new THREE.Line(zGeo, zMat);
+    zLine.computeLineDistances();
+    scene.add(zLine);
+
+    for (let i = 1; i <= 4; i++) {
+        createAxisNumber(i.toString(), i * SPACING - OFFSET, -OFFSET - 1.5, -OFFSET - 1.5, 0xec4899);
+        createAxisNumber(i.toString(), -OFFSET - 1.5, i * SPACING - OFFSET, -OFFSET - 1.5, 0x22c55e);
+        createAxisNumber(i.toString(), -OFFSET - 1.5, -OFFSET - 1.5, i * SPACING - OFFSET, 0x3b82f6);
+    }
+}
+
+function createAxisNumber(text, x, y, z, color) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64; canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#' + color.toString(16).padStart(6, '0');
+    ctx.font = 'bold 36px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 32, 32);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.position.set(x, y, z);
+    sprite.scale.set(0.6, 0.6, 0.6);
+    scene.add(sprite);
+}
+
+// ===================== SÍMBOLOS X / O =====================
+function createX(x, y, z) {
+    const group = new THREE.Group();
+    const material = new THREE.MeshPhysicalMaterial({
+        color: COLOR_X,
+        emissive: COLOR_X,
+        emissiveIntensity: 0.6,
+        roughness: 0.1,
+        metalness: 0.5,
+    });
+
+    const geo1 = new THREE.BoxGeometry(0.15, 0.9, 0.15);
+    const bar1 = new THREE.Mesh(geo1, material);
+    bar1.rotation.z = Math.PI / 4;
+    group.add(bar1);
+
+    const bar2 = new THREE.Mesh(geo1, material);
+    bar2.rotation.z = -Math.PI / 4;
+    group.add(bar2);
+
+    group.position.set(
+        x * SPACING - OFFSET,
+        y * SPACING - OFFSET,
+        z * SPACING - OFFSET
+    );
+
+    const glowGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+    const glowMat = new THREE.MeshBasicMaterial({
+        color: COLOR_X,
+        transparent: true,
+        opacity: 0.1
+    });
+    const glow = new THREE.Mesh(glowGeo, glowMat);
+    group.add(glow);
+
+    scene.add(group);
+    symbols.push({ group, x, y, z, player: 'X' });
+
+    group.scale.set(0, 0, 0);
+    animateScale(group, 1, 400);
+}
+
+function createO(x, y, z) {
+    const group = new THREE.Group();
+    const material = new THREE.MeshPhysicalMaterial({
+        color: COLOR_O,
+        emissive: COLOR_O,
+        emissiveIntensity: 0.6,
+        roughness: 0.1,
+        metalness: 0.5,
+    });
+
+    const geo = new THREE.TorusGeometry(0.35, 0.1, 16, 32);
+    const torus = new THREE.Mesh(geo, material);
+    group.add(torus);
+
+    group.position.set(
+        x * SPACING - OFFSET,
+        y * SPACING - OFFSET,
+        z * SPACING - OFFSET
+    );
+
+    const glowGeo = new THREE.SphereGeometry(0.5, 16, 16);
+    const glowMat = new THREE.MeshBasicMaterial({
+        color: COLOR_O,
+        transparent: true,
+        opacity: 0.1
+    });
+    const glow = new THREE.Mesh(glowGeo, glowMat);
+    group.add(glow);
+
+    scene.add(group);
+    symbols.push({ group, x, y, z, player: 'O' });
+
+    group.scale.set(0, 0, 0);
+    animateScale(group, 1, 400);
+}
+
+function animateScale(obj, target, duration) {
+    const start = performance.now();
+    const from = obj.scale.x;
+    function step(now) {
+        const t = Math.min((now - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - t, 3);
+        const s = from + (target - from) * ease;
+        obj.scale.set(s, s, s);
+        if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
+// ===================== INTERACCIÓN =====================
+function onMouseDown(e) {
+    isDragging = true;
+    previousMousePosition = { x: e.clientX, y: e.clientY };
+}
+
+function onMouseMove(e) {
+    if (!isDragging) return;
+    const deltaX = e.clientX - previousMousePosition.x;
+    const deltaY = e.clientY - previousMousePosition.y;
+    cameraAngle.theta -= deltaX * 0.01;
+    cameraAngle.phi += deltaY * 0.01;
+    cameraAngle.phi = Math.max(0.2, Math.min(Math.PI - 0.2, cameraAngle.phi));
+    updateCameraPosition();
+    previousMousePosition = { x: e.clientX, y: e.clientY };
+}
+
+function onMouseUp() { isDragging = false; }
+
+function onWheel(e) {
+    cameraRadius += e.deltaY * 0.01;
+    cameraRadius = Math.max(6, Math.min(25, cameraRadius));
+    updateCameraPosition();
+}
+
+function onClick(e) {
+    if (isDragging) return;
+    if (terminado || !miTurno || miJugador === null) return;
+
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(cells);
+
+    if (intersects.length > 0) {
+        const cell = intersects[0].object;
+        const { x, y, z } = cell.userData;
+
+        if (!cell.userData.occupied) {
+            const i = z * 16 + y * 4 + x;
+            socket.emit('jugar', { i: i });
+        }
+    }
+}
+
+// ===================== UI HELPERS =====================
+function updateTurnUI() {
+    const status = document.getElementById('game-status');
+    const substatus = document.getElementById('game-substatus');
+    if (terminado) return;
+    if (miTurno) {
+        status.textContent = '¡Tu turno!';
+        status.style.color = '#22c55e';
+        substatus.textContent = 'Selecciona una casilla para hacer tu jugada.';
+    } else {
+        status.textContent = 'Turno del rival';
+        status.style.color = '#f97316';
+        substatus.textContent = 'Esperando la jugada del oponente...';
+    }
+}
+
+function updateLastMove(player, x, y, z) {
+    document.getElementById('last-move-icon').textContent = player;
+    document.getElementById('last-move-icon').className = 'last-move-icon player-' + player.toLowerCase();
+    document.getElementById('last-move-player').textContent = 'Jugador ' + player;
+    document.getElementById('last-move-pos').textContent = '(' + (x+1) + ', ' + (y+1) + ', ' + (z+1) + ')';
+    document.getElementById('last-move-time').textContent = 'Hace un momento';
+}
+
+function highlightWin(winCells) {
+    for (const [x, y, z] of winCells) {
+        const cell = cells.find(c => c.userData.x === x && c.userData.y === y && c.userData.z === z);
+        if (cell) {
+            cell.material.color.setHex(COLOR_WIN);
+            cell.material.emissive.setHex(COLOR_WIN);
+            cell.material.emissiveIntensity = 0.8;
+            cell.material.opacity = 0.9;
+        }
+    }
+}
+
+function updateConnStatus(state, text) {
+    const el = document.getElementById('conn-status');
+    el.className = 'conn-status conn-' + state;
+    el.textContent = text;
+}
+
+function showModal(title, msg) {
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-msg').textContent = msg;
+    document.getElementById('game-modal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('game-modal').style.display = 'none';
 }
 
 function pedirReinicio() {
     socket.emit('reiniciar');
 }
-</script>
 
+function resetGame() {
+    board = Array(GRID_SIZE).fill(null).map(() =>
+        Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null))
+    );
+    currentPlayer = 0;
+    miTurno = (miJugador === 0);
+    terminado = false;
+
+    symbols.forEach(s => scene.remove(s.group));
+    symbols = [];
+
+    cells.forEach(cell => {
+        cell.userData.occupied = false;
+        cell.material.color.setHex(COLOR_EMPTY);
+        cell.material.emissive.setHex(COLOR_EMPTY_EMISSIVE);
+        cell.material.emissiveIntensity = 0.3;
+        cell.material.opacity = cell.userData.originalOpacity;
+    });
+
+    document.getElementById('last-move-icon').textContent = '-';
+    document.getElementById('last-move-player').textContent = '-';
+    document.getElementById('last-move-pos').textContent = '-';
+    document.getElementById('last-move-time').textContent = '-';
+
+    updateTurnUI();
+    closeModal();
+}
+
+function copyRoom() {
+    const code = document.getElementById('room-code').textContent;
+    if (code !== '----') {
+        navigator.clipboard.writeText(code);
+        alert('Código de sala copiado: ' + code);
+    }
+}
+
+// Layer selector
+document.querySelectorAll('.layer-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedLayer = parseInt(btn.dataset.layer);
+        const labels = ['1 (Frontal)', '2', '3', '4 (Trasera)'];
+        document.getElementById('current-layer').textContent = labels[selectedLayer];
+        highlightLayer(selectedLayer);
+    });
+});
+
+function highlightLayer(layer) {
+    cells.forEach(cell => {
+        if (cell.userData.z === layer) {
+            cell.material.opacity = 0.8;
+            cell.material.emissiveIntensity = 0.5;
+        } else if (!cell.userData.occupied) {
+            cell.material.opacity = 0.3;
+            cell.material.emissiveIntensity = 0.1;
+        }
+    });
+}
+
+// ===================== ANIMACIÓN =====================
+function animate() {
+    requestAnimationFrame(animate);
+    symbols.forEach(s => {
+        if (s.player === 'O') s.group.rotation.y += 0.01;
+    });
+    renderer.render(scene, camera);
+}
+
+// ===================== INICIO =====================
+window.addEventListener('resize', () => {
+    const container = document.getElementById('canvas-container');
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+});
+
+initThree();
+</script>
 </body>
 </html>
