@@ -702,7 +702,7 @@ let terminado = false;
 let enSala = false;
 
 // Socket.IO
-const socket = io();
+const socket = io(window.location.origin);
 
 // Three.js
 let scene, camera, renderer, raycaster, mouse;
